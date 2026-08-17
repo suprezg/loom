@@ -1,0 +1,179 @@
+syntax = component
+
+Component: "ParserEngine"
+  Note: [[Tokenizes target specifications and manifests using Pest grammar parsers into structured AST representations.]]
+
+  Diagram: "stateDiagram-v2" [[
+    [*] --> Ingested
+    Ingested --> Tokenizing : Pest Parser
+    Tokenizing --> FabricAST : fabric_file rule
+    Tokenizing --> ThreadAST : thread_file rule
+    ThreadAST --> BehaviorAST : Match SyntaxType::Behavior
+    ThreadAST --> ComponentAST : Match SyntaxType::Component
+    FabricAST --> [*]
+    BehaviorAST --> [*]
+    ComponentAST --> [*]
+  ]]
+
+  Invariants:
+    * "TokenMappingCompleteness: Every valid Pest grammar pair token MUST be mapped into a corresponding strongly-typed AST node."
+    * "LineLocationPreservation: AST nodes MUST retain source line numbers for accurate downstream error reporting."
+    * "PanicSafety: Syntactic and grammatical failures MUST return explicit ParseError variants without panicking."
+
+  Non-Functional:
+    * "Speed: Parsing MUST execute in under 10ms for spec files up to 5,000 lines."
+    * "Memory: Minimal string cloning by taking advantage of zero-copy Pest token spans where possible."
+
+  Models:
+    Model: "FabricAST"
+      Type: "Struct"
+      Members:
+        * "version: String"
+        * "output: String"
+        * "documents: Vec<DocumentAST>"
+
+    Model: "DocumentAST"
+      Type: "Struct"
+      Members:
+        * "target: String"
+        * "title: String"
+        * "sections: Vec<SectionAST>"
+
+    Model: "SectionAST"
+      Type: "Struct"
+      Members:
+        * "heading: String"
+        * "content: Option<String>"
+        * "specs: Vec<String>"
+        * "subsections: Vec<SectionAST>"
+
+    Model: "ThreadAST"
+      Type: "Enum"
+      Members:
+        * "Behavior(BehaviorAST)"
+        * "Component(ComponentAST)"
+
+    Model: "BehaviorAST"
+      Type: "Struct"
+      Members:
+        * "feature: FeatureAST"
+
+    Model: "FeatureAST"
+      Type: "Struct"
+      Members:
+        * "title: String"
+        * "note: Option<String>"
+        * "rules: Vec<RuleAST>"
+        * "scenarios: Vec<ScenarioAST>"
+
+    Model: "RuleAST"
+      Type: "Struct"
+      Members:
+        * "title: String"
+        * "note: Option<String>"
+        * "scenarios: Vec<ScenarioAST>"
+
+    Model: "ScenarioAST"
+      Type: "Struct"
+      Members:
+        * "title: String"
+        * "note: Option<String>"
+        * "diagrams: Vec<DiagramAST>"
+        * "steps: Vec<StepAST>"
+
+    Model: "StepAST"
+      Type: "Struct"
+      Members:
+        * "keyword: String"
+        * "text: String"
+
+    Model: "ComponentAST"
+      Type: "Struct"
+      Members:
+        * "name: String"
+        * "note: Option<String>"
+        * "diagrams: Vec<DiagramAST>"
+        * "invariants: Vec<String>"
+        * "models: Vec<ModelAST>"
+        * "contracts: Vec<ContractAST>"
+        * "nonFunctional: Vec<String>"
+
+    Model: "DiagramAST"
+      Type: "Struct"
+      Members:
+        * "diagramType: String"
+        * "content: String"
+
+    Model: "ModelAST"
+      Type: "Struct"
+      Members:
+        * "name: String"
+        * "note: Option<String>"
+        * "modelType: String"
+        * "members: Vec<String>"
+
+    Model: "ContractAST"
+      Type: "Struct"
+      Members:
+        * "name: String"
+        * "signature: String"
+        * "inputs: Vec<String>"
+        * "outputs: Vec<String>"
+        * "requires: Vec<String>"
+        * "ensures: Vec<String>"
+        * "preconditions: Vec<String>"
+        * "postconditions: Vec<String>"
+        * "process: Vec<String>"
+        * "note: Option<String>"
+        * "diagrams: Vec<DiagramAST>"
+
+    Model: "ParseError"
+      Type: "Enum"
+      Members:
+        * "InvalidGrammarToken"
+        * "UnexpectedToken"
+        * "LineParseError"
+
+  Contracts:
+    Contract: "parseFabric"
+      Signature: "parseFabric(rawYaml: &str) -> Result<FabricAST, ParseError>"
+      Inputs:
+        * "rawYaml: &str"
+      Outputs:
+        * "result: Result<FabricAST, ParseError>"
+      Requires:
+        * "rawYaml is a UTF-8 text string loaded from a .fabric file."
+      Ensures:
+        * "Returns a fully populated FabricAST hierarchy or an explicit ParseError."
+      Precondition:
+        * "rawYaml string buffer is non-empty."
+      Postcondition:
+        * "Output AST accurately represents the manifest layout, sections, and spec file lists."
+      Process:
+        1. "Pass rawYaml buffer to Pest FabricParser using the fabric_file rule."
+        2. "If Pest tokenization fails, extract line number and return ParseError::LineParseError."
+        3. "Iterate through top-level pairs to extract version and output target directory."
+        4. "Traverse documents pairs to construct DocumentAST items."
+        5. "Recursively parse section, content, specs, and subsections pairs into SectionAST structures."
+        6. "Return Ok(FabricAST)."
+
+    Contract: "parseThread"
+      Signature: "parseThread(content: &str, syntaxType: SyntaxType) -> Result<ThreadAST, ParseError>"
+      Inputs:
+        * "content: &str"
+        * "syntaxType: SyntaxType"
+      Outputs:
+        * "result: Result<ThreadAST, ParseError>"
+      Requires:
+        * "content buffer is loaded from a .thread file and syntaxType is verified by Dispatcher."
+      Ensures:
+        * "Returns a ThreadAST enum holding either a BehaviorAST or ComponentAST."
+      Precondition:
+        * "content string buffer is non-empty."
+      Postcondition:
+        * "Parsed AST nodes mirror the DSL keywords, structures, and inner blocks."
+      Process:
+        1. "Pass content buffer to Pest ThreadParser using the thread_file rule."
+        2. "If tokenization fails, convert Pest error into ParseError::LineParseError with line and column details."
+        3. "Match syntaxType parameter: for SyntaxType::Behavior, iterate behavior pairs and map into BehaviorAST. For SyntaxType::Component, iterate component pairs and map into ComponentAST."
+        4. "Return Ok(ThreadAST::Behavior) or Ok(ThreadAST::Component)."

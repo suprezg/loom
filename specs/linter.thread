@@ -1,0 +1,97 @@
+syntax = component
+
+Component: "Linter"
+  Note: [[Enforces structural, syntax, and semantic checks across documents and specification threads.]]
+
+  Diagram: "flowchart TD" [[
+    Start[Lint Thread] --> CheckType{AST Variant?}
+    CheckType -- BehaviorAST --> CheckFeature[Verify feature/scenario titles]
+    CheckFeature --> CheckSteps[Verify Given/When/Then steps order]
+    CheckType -- ComponentAST --> CheckComponent[Verify Component definition]
+    CheckComponent --> CheckContracts[Verify signature/process blocks]
+    CheckContracts --> CheckModels[Verify members entries]
+  ]]
+
+  Invariants:
+    * "NonBlockingWarnings: Warning and Info diagnostics MUST NOT trigger an early exit or block downstream output generation."
+    * "DeterministicOrdering: Reported diagnostics MUST be strictly sorted by file path, line number, and column position."
+    * "ZeroSideEffects: Lint operations MUST perform read-only evaluations and never mutate input AST structures."
+
+  Non-Functional:
+    * "Speed: Lint pass MUST evaluate an AST in under 2ms per file."
+    * "Allocation: Minimal allocations by referencing existing string slices from the AST where possible."
+
+  Models:
+    Model: "DiagnosticSeverity"
+      Type: "Enum"
+      Members:
+        * "Error"
+        * "Warning"
+        * "Info"
+
+    Model: "Diagnostic"
+      Type: "Struct"
+      Members:
+        * "path: String"
+        * "line: usize"
+        * "column: usize"
+        * "code: String"
+        * "message: String"
+        * "severity: DiagnosticSeverity"
+
+    Model: "LintReport"
+      Type: "Struct"
+      Members:
+        * "diagnostics: Vec<Diagnostic>"
+        * "errorCount: usize"
+        * "warningCount: usize"
+
+  Contracts:
+    Contract: "lintFabric"
+      Signature: "lintFabric(fabricAst: &FabricAST, baseDir: &str) -> LintReport"
+      Inputs:
+        * "fabricAst: &FabricAST"
+        * "baseDir: &str"
+      Outputs:
+        * "report: LintReport"
+      Requires:
+        * "fabricAst is a fully populated manifest AST and baseDir is the path containing the .fabric file."
+      Ensures:
+        * "Validates structural integrity, relative file references, and path constraints in the manifest."
+      Precondition:
+        * "baseDir path exists on disk."
+      Postcondition:
+        * "Returns a LintReport aggregating all manifest validation errors and warnings."
+      Process:
+        1. "Initialize empty LintReport structure with zero counters."
+        2. "Check manifest schema version against supported versions (flag unrecognized versions as Error)."
+        3. "Scan target document filenames for duplicate names or invalid path characters (flag as Error)."
+        4. "Traverses all document sections and subsections recursively to ensure headings are non-empty."
+        5. "Extract all referenced .thread paths under specs arrays."
+        6. "Resolve each spec path relative to baseDir using path resolver."
+        7. "If a referenced spec file does not exist on disk, create a Diagnostic with severity Error (code: 'FAB001')."
+        8. "Calculate final errorCount and warningCount totals."
+        9. "Sort diagnostics list by file path and line number."
+        10. "Return completed LintReport."
+
+    Contract: "lintThread"
+      Signature: "lintThread(threadAst: &ThreadAST, filePath: &str) -> LintReport"
+      Inputs:
+        * "threadAst: &ThreadAST"
+        * "filePath: &str"
+      Outputs:
+        * "report: LintReport"
+      Requires:
+        * "threadAst is a parsed BehaviorAST or ComponentAST, filePath is the source spec path."
+      Ensures:
+        * "Validates semantic rules, required clauses, contract signatures, and diagram tags."
+      Precondition:
+        * "filePath string is non-empty."
+      Postcondition:
+        * "Returns a LintReport containing all syntax-level and rule-level violations."
+      Process:
+        1. "Initialize empty LintReport structure with zero counters."
+        2. "Match threadAst variant: for BehaviorAST, verify non-empty titles (Error: 'BEH001'), proper sequence rules (Warning: 'BEH002'), and missing diagram types (Warning: 'BEH003'). For ComponentAST, verify component declaration (Error: 'CMP001'), contracts structure (Error: 'CMP002'), parameter validation (Warning: 'CMP003'), non-empty models (Error: 'CMP004'), and invariants/non-functional coverage (Warning: 'CMP005')."
+        3. "Calculate errorCount and warningCount totals."
+        4. "Sort diagnostics list by line and column numbers."
+        5. "Return completed LintReport."

@@ -1,0 +1,67 @@
+syntax = component
+
+Component: "DocumentComposer"
+  Note: [[Stitches sections recursively and invokes BlockExtractor to parse and format embedded diagrams.]]
+
+  Diagram: "flowchart TD" [[
+    Start[Compose Document] --> WriteH1[Write H1 Title]
+    WriteH1 --> LoopSections[For each section]
+    LoopSections --> GenDepth[Calculate Heading Depth]
+    GenDepth --> WriteHeading[Write Heading Line]
+    WriteHeading --> CheckProse{Has static prose?}
+    CheckProse -- Yes --> AppendProse[Append static prose]
+    CheckProse -- No --> LoopSpecs[For each spec path]
+    LoopSpecs --> ExtractBlocks[Invoke BlockExtractor on Thread AST]
+    ExtractBlocks --> FormatMD[Append notes & fenced diagrams]
+    FormatMD --> RecurseSub[Recurse Subsections]
+    RecurseSub --> LoopSections
+  ]]
+
+  Invariants:
+    * "DeterministicHeadingDepth: Heading levels MUST strictly reflect section nesting depth (# H1 for title, ## H2 for sections, ### H3+ for subsections)."
+    * "OutputPathMapping: Each document MUST resolve to a valid target file path joined with the manifest output directory."
+    * "PureTransformation: Document composition MUST be side-effect free, returning string buffers without performing disk I/O."
+
+  Non-Functional:
+    * "Speed: Document composition MUST execute in under 5ms per target document."
+    * "Memory: Pre-allocates string buffer capacity based on AST node sizes to minimize reallocation loops."
+
+  Models:
+    Model: "ComposedDocument"
+      Type: "Struct"
+      Members:
+        * "targetPath: String"
+        * "content: String"
+
+    Model: "ComposerError"
+      Type: "Enum"
+      Members:
+        * "MissingThreadReference"
+        * "FormattingFailed"
+
+  Contracts:
+    Contract: "compose"
+      Signature: "compose(fabricAst: &FabricAST, threads: &[DispatchedThread]) -> Result<Vec<ComposedDocument>, ComposerError>"
+      Inputs:
+        * "fabricAst: &FabricAST"
+        * "threads: &[DispatchedThread]"
+      Outputs:
+        * "results: Result<Vec<ComposedDocument>, ComposerError>"
+      Requires:
+        * "fabricAst is valid and threads slice contains all parsed spec threads."
+      Ensures:
+        * "Returns a list of ComposedDocument structures containing rendered Markdown buffers and target relative file paths."
+      Precondition:
+        * "fabricAst contains at least one DocumentAST entry."
+      Postcondition:
+        * "Generated Markdown buffers contain formatted section headings, prose blocks, and rendered thread specifications."
+      Process:
+        1. "Initialize empty vector for ComposedDocument items."
+        2. "Iterate through document AST entries defined inside fabricAst."
+        3. "Construct targetPath by joining fabricAst.output and document.target."
+        4. "Initialize empty String buffer for document content."
+        5. "Write document title as H1 heading ('# ' + document.title + '\n\n')."
+        6. "Process document sections recursively: calculate heading prefixes, append heading line and static prose, locate and extract notes/diagrams using BlockExtractor, format and append markdown, and recurse into subsections."
+        7. "Construct ComposedDocument struct using targetPath and compiled content buffer."
+        8. "Push ComposedDocument into results vector."
+        9. "Return Ok(Vec<ComposedDocument>)."

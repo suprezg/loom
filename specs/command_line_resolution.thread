@@ -1,0 +1,91 @@
+syntax = component
+
+Component: "CLIModule"
+  Note: [[Provides argument parsing rules and drives pipeline compilation weave/comb commands.]]
+
+  Diagram: "stateDiagram-v2" [[
+    [*] --> ParsingArgs
+    ParsingArgs --> WeaveCommand : Run "weave"
+    ParsingArgs --> CombCommand : Run "comb"
+    WeaveCommand --> ExitSuccess : Weave Successful
+    WeaveCommand --> ExitFailure : Weave Failed
+    CombCommand --> ExitSuccess : Comb Clean
+    CombCommand --> ExitFailure : Comb Errors
+  ]]
+
+  Invariants:
+    * "ArgumentParsing: CLI arguments MUST be parsed before launching pipeline tasks."
+    * "NonZeroExit: System MUST return exit code 1 on any unhandled diagnostic or IO error."
+    * "PipelineGuard: Execution MUST halt immediately if early path validation fails."
+
+  Non-Functional:
+    * "Speed: Argument parsing and path resolution MUST complete in under 5ms."
+    * "Memory: Low footprint (< 2MB heap allocation prior to parsing)."
+
+  Models:
+    Model: "ExitCode"
+      Type: "Enum"
+      Members:
+        * "Success"
+        * "Failure"
+
+    Model: "CombTarget"
+      Type: "Enum"
+      Members:
+        * "Fabric(PathBuf)"
+        * "Thread(PathBuf)"
+
+  Contracts:
+    Contract: "runCli"
+      Signature: "runCli(args: Vec<String>) -> Result<(), ExitCode>"
+      Inputs:
+        * "args: Vec<String>"
+      Outputs:
+        * "result: Result<(), ExitCode>"
+
+    Contract: "executeWeave"
+      Signature: "executeWeave(fabricPath: PathBuf) -> Result<(), ExitCode>"
+      Inputs:
+        * "fabricPath: PathBuf"
+      Outputs:
+        * "result: Result<(), ExitCode>"
+      Requires:
+        * "Path to target .fabric manifest is specified or cwd default exists."
+      Ensures:
+        * "All spec threads are ingested, parsed, linted, composed, and output to disk."
+      Precondition:
+        * "Resolver confirms that the target .fabric path exists on disk."
+      Postcondition:
+        * "Target Markdown documents are written or line-numbered errors are logged."
+      Process:
+        1. "Resolve and validate target .fabric manifest path using Resolver."
+        2. "Read raw manifest string via Ingester."
+        3. "Parse manifest structure via FabricParser."
+        4. "Extract and resolve relative thread paths relative to .fabric using Resolver."
+        5. "Ingest each thread file and dispatch to ThreadParser via Dispatcher."
+        6. "Lint full AST tree using Linter engine."
+        7. "Compose output Markdown documents using Composer, which uses BlockExtractor internally to resolve diagrams and notes."
+        8. "Write rendered output buffers to disk using Writer."
+        9. "Print execution metrics using Logger."
+
+    Contract: "executeComb"
+      Signature: "executeComb(target: CombTarget) -> Result<(), ExitCode>"
+      Inputs:
+        * "target: CombTarget"
+      Outputs:
+        * "result: Result<(), ExitCode>"
+      Requires:
+        * "Either '-f/--fabric' or '-t/--thread' option flag is supplied."
+      Ensures:
+        * "Validates syntax and logic rules without performing disk output steps."
+      Precondition:
+        * "Target manifest or thread file exists on disk."
+      Postcondition:
+        * "Diagnostic report is rendered to terminal."
+      Process:
+        1. "Verify explicit target flag (-f or -t) is present."
+        2. "Validate path existence via Resolver."
+        3. "Ingest raw target file buffer via Ingester."
+        4. "Pass payload to Dispatcher for syntax header check and parser routing."
+        5. "Execute semantic checks using Linter engine."
+        6. "Render line-numbered errors or clean verification report via Logger."
