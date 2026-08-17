@@ -1,0 +1,120 @@
+syntax = behavior
+
+Feature: "Loom Comb Command Execution"
+  Note: [[As a developer writing Loom specifications
+  I want to validate and lint manifests and spec threads using the comb command
+  So that I can identify syntax errors early before running the document weave pipeline]]
+
+  Diagram: "journey" [[
+    title Comb execution journey
+    section Setup
+      Select target: 5: User
+    section Verification
+      Run loom comb: 5: User, CLI
+      Read target files: 3: CLI, Ingester
+      Parse targets: 3: Parser
+      Validate rules: 3: Linter
+    section Diagnostics
+      Display diagnostics: 5: Logger
+  ]]
+
+  Diagram: "stateDiagram-v2" [[
+    [*] --> Idle
+    Idle --> ParsingTarget : Run "loom comb"
+    ParsingTarget --> LintingRules : Parsing OK
+    ParsingTarget --> LoggingErrors : Parse Error
+    LintingRules --> LoggingErrors : Violations Found
+    LintingRules --> LoggingSuccess : Validation Clean
+    LoggingErrors --> FailureExit : Has Errors
+    LoggingErrors --> SuccessExit : Warnings/Infos Only
+    LoggingSuccess --> SuccessExit
+    FailureExit --> [*]
+    SuccessExit --> [*]
+  ]]
+
+  Diagram: "flowchart TD" [[
+    Start([Start Comb]) --> CheckFlags{CLI Target Flag?}
+    CheckFlags -- None --> ErrorFlags[Display Missing Flags Error] --> ExitFail([Exit Code 1])
+    CheckFlags -- Fabric --> ParseFabric[Parse Manifest]
+    CheckFlags -- Thread --> ParseThread[Parse Thread AST]
+    ParseFabric --> LintFabric[Lint Manifest Structures & Paths]
+    ParseThread --> LintThread[Lint Syntax & Semantic Rules]
+    LintFabric --> LogDiagnostics[Format & Print Diagnostic Cards]
+    ParseThread --> LogDiagnostics
+    LogDiagnostics --> CheckErrors{Are there Errors?}
+    CheckErrors -- Yes --> ExitFail
+    CheckErrors -- No --> ExitSuccess([Exit Code 0])
+  ]]
+
+  Diagram: "flowchart LR" [[
+    TargetFile[(Target File)] --> Ingester([Ingester])
+    Ingester --> Payload[File Payload]
+    Payload --> Dispatcher([Dispatcher])
+    Dispatcher --> Parser([Parser Engine])
+    Parser --> AST[Parsed AST]
+    AST --> Linter([Linter Engine])
+    Linter --> LintReport[Lint Report]
+    LintReport --> Logger([Logger])
+    Logger --> TerminalStdout[Diagnostic Reports]
+  ]]
+
+  Diagram: "flowchart TD" [[
+    subgraph Inputs
+      T1[Comb Valid Manifest]
+      T2[Comb Manifest with Missing Specs]
+      T3[Comb Single Valid Thread]
+      T4[Comb Single Thread with Warnings]
+      T5[Comb Thread with Errors]
+    end
+    subgraph Expected Outcomes
+      O1[Exit 0 / Print Success Summary]
+      O2[Exit 1 / Print Diagnostic Error FAB001]
+      O3[Exit 0 / Print Thread Verified]
+      O4[Exit 0 / Print Diagnostic Warning BEH002]
+      O5[Exit 1 / Print Diagnostic Error CMP002]
+    end
+    T1 --> O1
+    T2 --> O2
+    T3 --> O3
+    T4 --> O4
+    T5 --> O5
+  ]]
+
+  Rule: "An explicit input target flag must be provided"
+
+    Scenario: "Executing comb without any flags"
+      Given "the user runs loom comb without options"
+      When "the system evaluates CLI arguments"
+      Then "the system halts execution"
+      And "displays Error: No input found. Provide -f/--fabric or -t/--thread"
+
+  Rule: "Manifest mode validates fabric syntax and all referenced spec threads"
+
+    Scenario: "Combing a valid fabric manifest and all its threads"
+      Given "a valid docs.fabric file"
+      And "all referenced thread spec files contain valid syntax"
+      When "the user executes loom comb -f docs.fabric"
+      Then "the system validates the manifest schema"
+      And "parses every thread file listed in the manifest"
+      And "displays Comb complete: 1 manifest and 4 thread files verified successfully"
+
+    Scenario: "Combing a fabric manifest with errors in referenced threads"
+      Given "a valid docs.fabric file"
+      And "specs/components/bus.thread has a syntax error on line 14"
+      When "the user executes loom comb --fabric docs.fabric"
+      Then "the system identifies the error in specs/components/bus.thread at line 14"
+      And "reports all syntax errors across the manifest thread tree"
+
+  Rule: "Direct thread mode lints a single spec file in isolation"
+
+    Scenario: "Combing a single spec file directly"
+      Given "the file specs/behaviors/auth.thread exists"
+      When "the user executes loom comb -t specs/behaviors/auth.thread"
+      Then "the system bypasses manifest checking"
+      And "parses only specs/behaviors/auth.thread"
+      And "displays Thread verified successfully: specs/behaviors/auth.thread"
+
+    Scenario: "Combing a single spec file with syntax errors"
+      Given "specs/behaviors/auth.thread contains invalid keyword Givenn on line 8"
+      When "the user executes loom comb --thread specs/behaviors/auth.thread"
+      Then "the system reports Error in specs/behaviors/auth.thread at line 8: Invalid keyword Givenn"

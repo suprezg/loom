@@ -1,0 +1,130 @@
+syntax = behavior
+
+Feature: "Loom Weave Command Execution"
+  Note: [[As a Loom spec author
+  I want to execute the weave command to validate manifests and compile thread specifications
+  So that I can generate complete Markdown documents while identifying missing files or syntax errors]] 
+
+  Diagram: "journey" [[
+    title Weave execution journey
+    section Setup
+      Create docs.fabric: 5: User
+      Create thread specs: 5: User
+    section Execution
+      Run loom weave: 5: User, CLI
+      Validate fabric: 3: CLI
+      Parse threads: 3: Parser
+      Lint AST: 3: Linter
+    section Output
+      Generate markdown: 5: Composer, Writer
+  ]]
+  
+  Diagram: "stateDiagram-v2" [[
+    [*] --> Idle
+    Idle --> ValidatingFabric : Run "loom weave"
+    ValidatingFabric --> ParsingThreads : Fabric Valid
+    ValidatingFabric --> Failure : Fabric Invalid
+    ParsingThreads --> LintingAST : Parsing OK
+    ParsingThreads --> Failure : Parse Error
+    LintingAST --> ComposingMarkdown : Linting Clean
+    LintingAST --> Failure : Lint Error
+    ComposingMarkdown --> WritingFiles : Compose OK
+    WritingFiles --> Success : Write Successful
+    WritingFiles --> Failure : Write Failed
+    Failure --> [*]
+    Success --> [*]
+  ]]
+
+  Diagram: "flowchart TD" [[
+    Start([Start Weave]) --> CheckFabric{Does docs.fabric exist?}
+    CheckFabric -- No --> ErrorManifest[Display Missing Manifest Error] --> ExitFail([Exit Code 1])
+    CheckFabric -- Yes --> ParseFabric[Parse docs.fabric with Pest]
+    ParseFabric --> ValidFabric{Is manifest valid?}
+    ValidFabric -- No --> ErrorSyntax[Display Manifest Syntax Error] --> ExitFail
+    ValidFabric -- Yes --> ResolvePaths[Resolve Thread Paths]
+    ResolvePaths --> ReadThreads[Read Thread Files]
+    ReadThreads --> ParseThreads[Parse Thread ASTs with Pest]
+    ParseThreads --> LintAST[Run Linter Checks]
+    LintAST -- Warnings/Infos --> Compose[Compose Markdown Buffer]
+    LintAST -- Errors --> ErrorLint[Display Lint Errors] --> ExitFail
+    Compose --> WriteFiles[Write Files to docs/ Folder]
+    WriteFiles --> Success([Exit Code 0])
+  ]]
+
+  Diagram: "flowchart LR" [[
+    docs.fabric[(docs.fabric)] --> FabricParser([Fabric Parser])
+    threads[(Thread Files)] --> ThreadParser([Thread Parser])
+    FabricParser --> FabricAST[Fabric AST]
+    ThreadParser --> ThreadAST[Thread ASTs]
+    FabricAST & ThreadAST --> Linter([Linter Engine])
+    Linter --> LintReport[Lint Report / Diagnostics]
+    FabricAST & ThreadAST --> Composer([Document Composer])
+    Composer --> ComposedMarkdown[Composed Markdown Buffer]
+    ComposedMarkdown --> FileWriter([File Writer])
+    FileWriter --> OutputMD[(docs/DESIGN.md & docs/WORKFLOW.md)]
+  ]]
+
+  Diagram: "flowchart TD" [[
+    subgraph Inputs
+      T1[Valid docs.fabric + Valid Threads]
+      T2[Missing docs.fabric]
+      T3[Invalid docs.fabric Syntax]
+      T4[Missing Spec File Path]
+      T5[Spec Syntax Error]
+    end
+    subgraph Expected Outcomes
+      O1[Successful Weave / Output MD]
+      O2[Halt + Error: docs.fabric not found]
+      O3[Halt + Line-Numbered YAML/Pest Error]
+      O4[Halt + File Not Found Error]
+      O5[Halt + Line-Numbered Spec Error]
+    end
+    T1 --> O1
+    T2 --> O2
+    T3 --> O3
+    T4 --> O4
+    T5 --> O5
+  ]]
+
+  Rule: "Fabric manifest file must exist and parse cleanly"
+
+    Scenario: "Executing weave with missing default manifest"
+      Given "the current working directory lacks docs.fabric"
+      And "no --fabric flag is passed"
+      When "the user executes loom weave"
+      Then "the system halts execution"
+      And "displays an error explaining that docs.fabric was not found"
+
+    Scenario: "Executing weave with invalid YAML syntax"
+      Given "docs.fabric contains a syntax error on line 12"
+      When "the user executes loom weave"
+      Then "the system halts execution"
+      And "displays Error in docs.fabric at line 12 with syntax details"
+
+  Rule: "All referenced thread spec files must exist prior to parsing"
+
+    Scenario: "Referencing a non-existent thread file"
+      Given "docs.fabric references specs/missing.thread"
+      And "specs/missing.thread does not exist on disk"
+      When "the user executes loom weave"
+      Then "the system halts execution before spec parsing"
+      And "displays Error: Thread file not found: specs/missing.thread"
+      And "instructs the user to update the path in docs.fabric"
+
+  Rule: "Spec parsing failures must pinpoint file and line location"
+
+    Scenario: "Syntax error inside a behavioral thread"
+      Given "specs/behaviors/auth.thread exists"
+      And "contains an invalid keyword on line 18"
+      When "the user executes loom weave"
+      Then "the system halts execution"
+      And "displays Error in specs/behaviors/auth.thread at line 18"
+
+  Rule: "Successful compilation outputs destination paths"
+
+    Scenario: "Successful document weaving"
+      Given "docs.fabric is valid"
+      And "all referenced spec thread files exist and parse without errors"
+      When "the user executes loom weave"
+      Then "the system generates the target Markdown documents"
+      And "displays Successfully woven document: ./docs/DESIGN.md"

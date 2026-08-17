@@ -1,0 +1,120 @@
+syntax = component
+
+Component: "DiagnosticsLogger"
+  Note: [[Synchronized output logger routing standard details to stdout and error/warnings to stderr.]]
+
+  Diagram: "flowchart TD" [[
+    Log[Log Call] --> CheckLevel{Priority >= config?}
+    CheckLevel -- No --> Silent[Silently Suppress]
+    CheckLevel -- Yes --> CheckSeverity{Is Error/Warning?}
+    CheckSeverity -- Yes --> Stderr[Write formatted diagnostic to Stderr]
+    CheckSeverity -- No --> Stdout[Write progress log to Stdout]
+  ]]
+
+  Invariants:
+    * "ThreadSafeOutput: Terminal output formatting MUST be synchronized to prevent interleaved output lines during concurrent executions."
+    * "RespectLogLevel: Log messages with a priority lower than the configured active LogLevel MUST be silently suppressed."
+    * "StandardErrorRouting: Diagnostics with severity Error or Warning MUST be routed to stderr, while standard progress logs MUST be routed to stdout."
+
+  Non-Functional:
+    * "Speed: Diagnostic rendering and string formatting MUST execute in under 0.2ms per diagnostic."
+    * "Memory: Reuses pre-allocated thread-local buffers to eliminate dynamic memory allocations during terminal I/O."
+
+  Models:
+    Model: "LogLevel"
+      Type: "Enum"
+      Members:
+        * "Quiet"
+        * "Normal"
+        * "Verbose"
+
+    Model: "ExecutionSummary"
+      Type: "Struct"
+      Members:
+        * "filesWritten: Vec<String>"
+        * "totalDocuments: usize"
+        * "errorCount: usize"
+        * "warningCount: usize"
+        * "elapsedMs: u64"
+
+  Contracts:
+    Contract: "init"
+      Signature: "init(level: LogLevel) -> ()"
+      Inputs:
+        * "level: LogLevel"
+      Outputs:
+        * "void: ()"
+      Requires:
+        * "Terminal output streams (stdout/stderr) are accessible."
+      Ensures:
+        * "Locks the global verbosity level state for all logging calls across the runtime pipeline."
+      Precondition:
+        * "Executed during early CLI initialization before any pipeline tasks run."
+      Postcondition:
+        * "Global logger verbosity state is initialized."
+      Process:
+        1. "Receive LogLevel enum variant evaluated from CLI flag arguments (--quiet, --verbose)."
+        2. "Store LogLevel setting into internal global static logger configuration."
+        3. "Return unit type ()."
+
+    Contract: "logDiagnostic"
+      Signature: "logDiagnostic(diagnostic: &Diagnostic, sourceCode: Option<&str>) -> ()"
+      Inputs:
+        * "diagnostic: &Diagnostic"
+        * "sourceCode: Option<&str>"
+      Outputs:
+        * "void: ()"
+      Requires:
+        * "Valid Diagnostic item containing severity, error code, message, file path, line number, and column."
+      Ensures:
+        * "Formats and prints a line-numbered diagnostic error card with source context snippets to stderr."
+      Precondition:
+        * "Active LogLevel is not LogLevel::Quiet or diagnostic.severity is DiagnosticSeverity::Error."
+      Postcondition:
+        * "Formatted diagnostic output string is flushed to stderr stream."
+      Process:
+        1. "Inspect diagnostic.severity to assign terminal color formatting (Red for Error, Yellow for Warning, Blue for Info)."
+        2. "Construct top header string with path, line number, column, and diagnostic code (e.g., error[CMP001]: specs/cli.thread:14:2)."
+        3. "Append diagnostic.message text beneath the header string."
+        4. "If sourceCode string is provided, locate target line, format gutter, and render column pointer marker."
+        5. "Flush formatted diagnostic card buffer to stderr stream."
+
+    Contract: "logInfo"
+      Signature: "logInfo(message: &str, levelThreshold: LogLevel) -> ()"
+      Inputs:
+        * "message: &str"
+        * "levelThreshold: LogLevel"
+      Outputs:
+        * "void: ()"
+      Requires:
+        * "Informational message string is provided."
+      Ensures:
+        * "Prints progress status message to stdout if current LogLevel meets levelThreshold requirement."
+      Precondition:
+        * "Active LogLevel is equal to or greater than levelThreshold."
+      Postcondition:
+        * "Message line is written to stdout stream."
+      Process:
+        1. "Compare configured global LogLevel with levelThreshold argument."
+        2. "If active LogLevel is lower than levelThreshold, suppress output and return immediately."
+        3. "Prepend informational status prefix (e.g., [INFO] or [WEAVE]) to message string."
+        4. "Write formatted line to stdout stream."
+
+    Contract: "renderSummary"
+      Signature: "renderSummary(summary: &ExecutionSummary) -> ()"
+      Inputs:
+        * "summary: &ExecutionSummary"
+      Outputs:
+        * "void: ()"
+      Requires:
+        * "ExecutionSummary containing compilation totals, error metrics, and elapsed execution time."
+      Ensures:
+        * "Renders final execution report summary card to stdout or stderr."
+      Precondition:
+        * "Active LogLevel is not LogLevel::Quiet."
+      Postcondition:
+        * "Final execution report status is output to the terminal."
+      Process:
+        1. "Evaluate summary.errorCount metric."
+        2. "If errorCount is greater than 0, construct red failure summary card and write block to stderr stream."
+        3. "If errorCount is 0, construct green success report card listing all written document paths, append totals, and write block to stdout stream."

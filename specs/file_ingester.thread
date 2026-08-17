@@ -1,0 +1,84 @@
+syntax = component
+
+Component: "FileIngester"
+  Note: [[Reads and decodes target manifest and thread files into string buffers with explicit error handling.]]
+
+  Diagram: "stateDiagram-v2" [[
+    [*] --> Ready
+    Ready --> Reading : readFile()
+    Reading --> Decoded : UTF-8 Valid
+    Reading --> InvalidUtf8 : Decode Error
+    Reading --> FileNotFound : Missing File
+    Reading --> PermissionDenied : Access Blocked
+    Decoded --> [*]
+    InvalidUtf8 --> [*]
+    FileNotFound --> [*]
+    PermissionDenied --> [*]
+  ]]
+
+  Invariants:
+    * "Utf8Encoding: Read file contents MUST be valid UTF-8 strings."
+    * "NonMutatingIo: File reading operations MUST be strictly read-only and preserve disk file integrity."
+    * "ExplicitIoError: Any underlying OS I/O failure MUST be mapped to an explicit IngestError enum variant without panicking."
+
+  Non-Functional:
+    * "Speed: File ingestion throughput MUST execute at a minimum of 50 MB/s on standard storage."
+    * "Memory: Buffer allocation MUST match exact file byte length to eliminate memory fragmentation."
+
+  Models:
+    Model: "FilePayload"
+      Type: "Struct"
+      Members:
+        * "path: String"
+        * "content: String"
+
+    Model: "IngestError"
+      Type: "Enum"
+      Members:
+        * "FileNotFound"
+        * "PermissionDenied"
+        * "InvalidUtf8"
+        * "IoError"
+
+  Contracts:
+    Contract: "readFile"
+      Signature: "readFile(path: &str) -> Result<String, IngestError>"
+      Inputs:
+        * "path: &str"
+      Outputs:
+        * "content: Result<String, IngestError>"
+      Requires:
+        * "Target file exists on disk and process has read permissions."
+      Ensures:
+        * "Returns full raw text content of target file as a String buffer."
+      Precondition:
+        * "Path string is non-empty."
+      Postcondition:
+        * "Target file handle is closed immediately after reading."
+      Process:
+        1. "Attempt to open OS file handle for given path string."
+        2. "If handle creation fails due to missing file, return IngestError::FileNotFound."
+        3. "If handle creation fails due to permissions, return IngestError::PermissionDenied."
+        4. "Read raw file bytes into string buffer using std::fs::read_to_string."
+        5. "If byte decoding fails, return IngestError::InvalidUtf8."
+        6. "Return Ok(String) containing raw file content."
+
+    Contract: "readFilePayload"
+      Signature: "readFilePayload(loomPath: &LoomPath) -> Result<FilePayload, IngestError>"
+      Inputs:
+        * "loomPath: &LoomPath"
+      Outputs:
+        * "payload: Result<FilePayload, IngestError>"
+      Requires:
+        * "LoomPath contains valid absolute system path and relative display path."
+      Ensures:
+        * "Returns a FilePayload containing the relative path string and raw text content buffer."
+      Precondition:
+        * "loomPath.absolute is non-empty."
+      Postcondition:
+        * "File handle is closed and memory is allocated strictly for content payload."
+      Process:
+        1. "Call readFile using loomPath.absolute as target path."
+        2. "If readFile returns IngestError, bubble up error result."
+        3. "Construct FilePayload struct using loomPath.relative as path and read content as content."
+        4. "Return Ok(FilePayload)."

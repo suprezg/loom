@@ -1,0 +1,113 @@
+syntax = behavior
+
+Feature: "VS Code Extension Support for Loom Specification Suite"
+  Note: [[As a Loom spec author
+  I want syntax highlighting, context-aware autocompletion, and custom file icons in VS Code
+  So that I can write, navigate, and maintain .fabric and .thread files efficiently]]
+
+  Diagram: "journey" [[
+    title VS Code extension journey
+    section File Association
+      Open .fabric or .thread: 5: User
+      Language mode binds: 5: VS Code
+      Render custom badges: 4: VS Code
+    section Editing
+      Apply syntax highlight: 5: VS Code
+      Trigger autocompletion: 5: User
+      Render contextual suggestions: 5: Language Server
+  ]]
+
+  Diagram: "stateDiagram-v2" [[
+    [*] --> EditorClosed
+    EditorClosed --> FileOpened : Double Click File
+    state FileOpened {
+      [*] --> DetectingExtension
+      DetectingExtension --> FabricMode : Extension is ".fabric"
+      DetectingExtension --> ThreadMode : Extension is ".thread"
+    }
+    FabricMode --> ApplyingHighlighting : Set Language ID
+    ThreadMode --> InspectingHeader : Parse syntax header
+    InspectingHeader --> BehaviorMode : syntax = behavior
+    InspectingHeader --> ComponentMode : syntax = component
+    ApplyingHighlighting --> EditorReady
+    BehaviorMode --> EditorReady
+    ComponentMode --> EditorReady
+    EditorReady --> Typing : Edit File
+    Typing --> SuggestingKeywords : Trigger Autocomplete
+    SuggestingKeywords --> EditorReady : Select Suggestion
+    EditorReady --> [*]
+  ]]
+
+  Diagram: "flowchart TD" [[
+    Start([Open File]) --> ExtCheck{File Extension?}
+    ExtCheck -- .fabric --> BindFabric[Bind "Loom Fabric" Mode] --> RenderFabricIcon[Render Fabric SVG Icon Badge] --> HighlightFabric[Highlight Fabric Keys] --> EndReady([Editor Ready])
+    ExtCheck -- .thread --> BindThread[Bind "Loom Thread" Mode] --> ParseHeader{Header Type?}
+    ParseHeader -- syntax = behavior --> BehaviorAutocomplete[Activate Behavior Suggestion List] --> HighlightBehavior[Highlight Gherkin Keywords] --> EndReady
+    ParseHeader -- syntax = component --> ComponentAutocomplete[Activate Component Suggestion List] --> HighlightComponent[Highlight DbC Keywords] --> EndReady
+  ]]
+
+  Diagram: "flowchart LR" [[
+    UserFile[(File buffer)] --> TextMateGrammar([TextMate Grammar Engine])
+    UserFile --> CompletionProvider([Context Completion Provider])
+    TextMateGrammar --> TokenColors[Colorized Tokens in UI]
+    CompletionProvider --> SuggestionList[Contextual Suggestions List]
+    SuggestionList --> EditorUI[Rendered VS Code Editor]
+    TokenColors --> EditorUI
+  ]]
+
+  Diagram: "flowchart TD" [[
+    subgraph Actions
+      T1[Open file.fabric]
+      T2[Open file.thread with syntax=behavior]
+      T3[Open file.thread with syntax=component]
+      T4[Request autocomplete in Behavior thread]
+      T5[Request autocomplete in Component thread]
+    end
+    subgraph Results
+      O1[Bind "Loom Fabric" / Highlight manifest keys]
+      O2[Bind "Loom Thread" / Highlight Gherkin keywords]
+      O3[Bind "Loom Thread" / Highlight DbC keywords]
+      O4[Suggest Feature, Scenario / Suppress Requires]
+      O5[Suggest Signature, Precondition / Suppress Given]
+    end
+    T1 --> O1
+    T2 --> O2
+    T3 --> O3
+    T4 --> O4
+    T5 --> O5
+  ]]
+
+  Rule: "Language recognition and custom file icon rendering"
+
+    Scenario: "Opening a manifest file"
+      Given "the developer has installed the Loom Specification Suite VS Code extension"
+      When "the developer opens any file with the .fabric extension"
+      Then "VS Code should bind the language mode to Loom Fabric"
+      And "render the custom fabric SVG icon badge with a 3px padding margin from the file tree line"
+      And "apply syntax highlighting to schema keys such as version, output, and documents"
+
+    Scenario: "Opening a thread specification file"
+      Given "the developer opens any file with the .thread extension"
+      When "the editor parses the document header"
+      Then "VS Code should bind the language mode to Loom Thread"
+      And "render the custom thread SVG icon badge in the workspace file tree"
+      And "highlight top-level DSL keywords according to the active syntax header"
+
+  Rule: "Context-aware keyword autocompletion"
+
+    Scenario: "Autocompleting a Component Specification thread"
+      Given "a spec file starting with syntax = component"
+      When "the developer triggers autocompletion on a new line"
+      Then "the extension should suggest Component DSL keywords including Component:, Contracts:, Invariants:, and Models:"
+      But "it should suppress Gherkin-style behavior keywords like Given, When, or Scenario:"
+
+    Scenario: "Autocompleting a Behavioral Specification thread"
+      Given "a spec file starting with syntax = behavior"
+      When "the developer triggers autocompletion on a line"
+      Then "the extension should suggest Behavioral DSL keywords including Feature:, Rule:, Scenario:, Given, When, and Then"
+      But "it should suppress Component DbC keywords like Precondition: or Postcondition:"
+
+    Scenario: "Autocompleting manifest keys in a Fabric file"
+      Given "an active manifest file with the .fabric extension"
+      When "the developer requests autocompletion inside a section block"
+      Then "the extension should suggest manifest keys like sections:, specs:, content:, and subsections:"
