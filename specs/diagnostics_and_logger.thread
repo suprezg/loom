@@ -21,6 +21,23 @@ Component: "DiagnosticsLogger"
     * "Memory: Reuses pre-allocated thread-local buffers to eliminate dynamic memory allocations during terminal I/O."
 
   Models:
+      Model: "DiagnosticSeverity"
+      Type: "Enum"
+      Members:
+        * "Error"
+        * "Warning"
+        * "Info"
+
+    Model: "Diagnostic"
+      Type: "Struct"
+      Members:
+        * "path: String"
+        * "line: usize"
+        * "column: usize"
+        * "code: String"
+        * "message: String"
+        * "severity: DiagnosticSeverity"
+
     Model: "LogLevel"
       Type: "Enum"
       Members:
