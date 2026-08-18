@@ -9,3 +9,8 @@ Purpose: Exports data models within the Loom compiler library.
  * Diagnostic and execution summary data models.
  */
 pub mod diagnostic_models;
+
+/**
+ * Path resolver data models.
+ */
+pub mod path_resolver_models;
