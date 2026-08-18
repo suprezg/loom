@@ -9,3 +9,8 @@ Purpose: Exports helper submodules like diagnostics within the Loom compiler lib
  * Logger and diagnostic reporting implementation.
  */
 pub mod diagnostics;
+
+/**
+ * Path resolver functionality.
+ */
+pub mod path_resolver;
