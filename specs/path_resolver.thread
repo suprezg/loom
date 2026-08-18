@@ -37,7 +37,7 @@ Component: "PathResolver"
 
   Contracts:
     Contract: "validatePath"
-      Signature: "validatePath(target: &str) -> bool"
+      Signature: "validatePath(target: &str) -> Result<bool, ResolverError>"
       Inputs:
         * "target: &str"
       Outputs:
