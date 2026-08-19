@@ -12,6 +12,9 @@
     <i>An Architecture-as-Code compiler to weave behavioral specifications and low-level component contracts into structured, publication-ready documentation.</i>
 </p>
 
+> [!NOTE]
+> **Active Development:** This project is currently a work in progress and is being actively buil!
+
 ## Abstract
 
 Loom is an **Architecture as Code** tool designed to unify high-level system behaviors and low-level component contracts into a single specification-to-documentation workflow. 
