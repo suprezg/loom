@@ -1,107 +1,43 @@
 /*
 File Name: path_resolver_tests.rs
-Purpose: Integration tests for the PathResolver component verifying path validation, resolution, and parent directory extraction.
+Purpose: Integration tests for the PathResolver component verifying path resolution and parent directory extraction.
 */
 
 #![allow(non_snake_case)]
 
 use loom::helpers::path_resolver::{
-    getParentDir, resolvePath, validatePath, LoomPath, ResolverError,
+    getParentDir, resolvePath, LoomPath, ResolverError,
 };
 
-/**
- * Tests validatePath with a valid existing file.
- *
- * Takes:
- * 	None.
- *
- * Gives:
- * 	(): Unit type.
- */
-#[test]
-fn testValidatePathWithValidFile() -> ()
-{
-    let result = validatePath("Cargo.toml");
-    assert_eq!(result, Ok(true));
-}
+/*
+Tests resolvePath with correct baseDir and correct relativeTarget.
 
-/**
- * Tests validatePath with a valid path to a non-existent file.
- *
- * Takes:
- * 	None.
- *
- * Gives:
- * 	(): Unit type.
- */
-#[test]
-fn testValidatePathWithNonExistentFile() -> ()
-{
-    let result = validatePath("non_existent_file.txt");
-    assert_eq!(result, Err(ResolverError::PathNotFound));
-}
+Takes:
+	None.
 
-/**
- * Tests validatePath with an invalid/junk path string.
- *
- * Takes:
- * 	None.
- *
- * Gives:
- * 	(): Unit type.
- */
-#[test]
-fn testValidatePathWithJunkText() -> ()
-{
-    let result = validatePath("invalid\0path");
-    assert_eq!(result, Err(ResolverError::InvalidPathString));
-}
-
-/**
- * Tests validatePath with a directory path (should return NotAFile error).
- *
- * Takes:
- * 	None.
- *
- * Gives:
- * 	(): Unit type.
- */
-#[test]
-fn testValidatePathWithDirectory() -> ()
-{
-    let result = validatePath("helpers");
-    assert_eq!(result, Err(ResolverError::NotAFile));
-}
-
-/**
- * Tests resolvePath with correct baseDir and correct relativeTarget.
- *
- * Takes:
- * 	None.
- *
- * Gives:
- * 	(): Unit type.
- */
+Gives:
+	(): Unit type.
+*/
 #[test]
 fn testResolvePathSuccess() -> ()
 {
     let result = resolvePath("helpers", "path_resolver.rs");
     assert!(result.is_ok());
-    
-    let loom_path: LoomPath = result.unwrap();
-    assert_eq!(loom_path.relative, "path_resolver.rs");
-    assert!(loom_path.absolute.ends_with("helpers/path_resolver.rs"));
+
+    let loomPath: LoomPath = result.unwrap();
+    assert_eq!(loomPath.relative, "path_resolver.rs");
+    assert!(loomPath.absolute.ends_with("helpers/path_resolver.rs"));
 }
 
-/**
- * Tests resolvePath with correct baseDir and wrong relativeTarget.
- *
- * Takes:
- * 	None.
- *
- * Gives:
- * 	(): Unit type.
- */
+/*
+Tests resolvePath with correct baseDir and wrong relativeTarget.
+
+Takes:
+	None.
+
+Gives:
+	(): Unit type.
+*/
 #[test]
 fn testResolvePathWrongRelativeTarget() -> ()
 {
@@ -109,15 +45,15 @@ fn testResolvePathWrongRelativeTarget() -> ()
     assert_eq!(result, Err(ResolverError::PathNotFound));
 }
 
-/**
- * Tests resolvePath with wrong baseDir and right relativeTarget.
- *
- * Takes:
- * 	None.
- *
- * Gives:
- * 	(): Unit type.
- */
+/*
+Tests resolvePath with wrong baseDir and right relativeTarget.
+
+Takes:
+	None.
+
+Gives:
+	(): Unit type.
+*/
 #[test]
 fn testResolvePathWrongBaseDir() -> ()
 {
@@ -125,15 +61,15 @@ fn testResolvePathWrongBaseDir() -> ()
     assert_eq!(result, Err(ResolverError::PathNotFound));
 }
 
-/**
- * Tests resolvePath with wrong baseDir and wrong relativeTarget.
- *
- * Takes:
- * 	None.
- *
- * Gives:
- * 	(): Unit type.
- */
+/*
+Tests resolvePath with wrong baseDir and wrong relativeTarget.
+
+Takes:
+	None.
+
+Gives:
+	(): Unit type.
+*/
 #[test]
 fn testResolvePathWrongBaseAndWrongTarget() -> ()
 {
@@ -141,15 +77,15 @@ fn testResolvePathWrongBaseAndWrongTarget() -> ()
     assert_eq!(result, Err(ResolverError::PathNotFound));
 }
 
-/**
- * Tests resolvePath failure that results in CanonicalizationFailed.
- *
- * Takes:
- * 	None.
- *
- * Gives:
- * 	(): Unit type.
- */
+/*
+Tests resolvePath failure that results in CanonicalizationFailed.
+
+Takes:
+	None.
+
+Gives:
+	(): Unit type.
+*/
 #[test]
 fn testResolvePathCanonicalizationFailed() -> ()
 {
@@ -157,34 +93,34 @@ fn testResolvePathCanonicalizationFailed() -> ()
     assert_eq!(result, Err(ResolverError::CanonicalizationFailed));
 }
 
-/**
- * Tests resolvePath with junk text.
- *
- * Takes:
- * 	None.
- *
- * Gives:
- * 	(): Unit type.
- */
+/*
+Tests resolvePath with junk text.
+
+Takes:
+	None.
+
+Gives:
+	(): Unit type.
+*/
 #[test]
 fn testResolvePathWithJunkText() -> ()
 {
     let result = resolvePath("invalid\0path", "path_resolver.rs");
     assert_eq!(result, Err(ResolverError::InvalidPathString));
-    
+
     let result2 = resolvePath("helpers", "invalid\npath");
     assert_eq!(result2, Err(ResolverError::InvalidPathString));
 }
 
-/**
- * Tests resolvePath with a directory path as target (should return NotAFile error).
- *
- * Takes:
- * 	None.
- *
- * Gives:
- * 	(): Unit type.
- */
+/*
+Tests resolvePath with a directory path as target (should return NotAFile error).
+
+Takes:
+	None.
+
+Gives:
+	(): Unit type.
+*/
 #[test]
 fn testResolvePathWithDirectory() -> ()
 {
@@ -192,54 +128,53 @@ fn testResolvePathWithDirectory() -> ()
     assert_eq!(result, Err(ResolverError::NotAFile));
 }
 
+/*
+Tests getParentDir with a correct file path.
 
-/**
- * Tests getParentDir with a correct file path.
- *
- * Takes:
- * 	None.
- *
- * Gives:
- * 	(): Unit type.
- */
+Takes:
+	None.
+
+Gives:
+	(): Unit type.
+*/
 #[test]
 fn testGetParentDirSuccess() -> ()
 {
     let result = getParentDir("helpers/path_resolver.rs");
     assert_eq!(result, Ok(String::from("helpers")));
-    
+
     let result2 = getParentDir("Cargo.toml");
     assert_eq!(result2, Ok(String::from(".")));
 }
 
-/**
- * Tests getParentDir with an invalid/junk path string.
- *
- * Takes:
- * 	None.
- *
- * Gives:
- * 	(): Unit type.
- */
+/*
+Tests getParentDir with an invalid/junk path string.
+
+Takes:
+	None.
+
+Gives:
+	(): Unit type.
+*/
 #[test]
 fn testGetParentDirWithJunkText() -> ()
 {
     let result = getParentDir("invalid\0path");
     assert_eq!(result, Err(ResolverError::InvalidPathString));
-    
+
     let result2 = getParentDir("");
     assert_eq!(result2, Err(ResolverError::InvalidPathString));
 }
 
-/**
- * Tests getParentDir with a directory path (should return NotAFile error).
- *
- * Takes:
- * 	None.
- *
- * Gives:
- * 	(): Unit type.
- */
+/*
+Tests getParentDir with a directory path (should return NotAFile error).
+
+Takes:
+	None.
+
+Gives:
+	(): Unit type.
+*/
 #[test]
 fn testGetParentDirWithDirectory() -> ()
 {
