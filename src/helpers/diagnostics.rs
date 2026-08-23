@@ -68,7 +68,7 @@ Takes:
 Gives:
 	LogLevel: The active log level.
 */
-fn getActivityLevel() -> LogLevel
+fn getLogLevel() -> LogLevel
 {
     match ACTIVE_LOG_LEVEL.read() {
         Ok(level) => *level,
@@ -85,7 +85,7 @@ Takes:
 Gives:
 	(): Unit type.
 */
-pub fn setActivityLevel(level: LogLevel) -> ()
+pub fn setLogLevel(level: LogLevel) -> ()
 {
     if let Ok(mut activeLevel) = ACTIVE_LOG_LEVEL.write() {
         *activeLevel = level;
@@ -104,7 +104,7 @@ Gives:
 */
 pub fn logDiagnostic(diagnostic: &Diagnostic, sourceCode: Option<&str>) -> ()
 {
-    let activeLevel = getActivityLevel();
+    let activeLevel = getLogLevel();
 
     let shouldLog = match diagnostic.severity {
         DiagnosticSeverity::Error => true,
@@ -162,7 +162,7 @@ Gives:
 */
 pub fn logInfo(message: &str, levelThreshold: LogLevel) -> ()
 {
-    let activeLevel = getActivityLevel();
+    let activeLevel = getLogLevel();
 
     if activeLevel < levelThreshold {
         return;
@@ -190,7 +190,7 @@ Gives:
 */
 pub fn renderSummary(summary: &ExecutionSummary) -> ()
 {
-    let activeLevel = getActivityLevel();
+    let activeLevel = getLogLevel();
 
     if activeLevel == LogLevel::Quiet {
         return;

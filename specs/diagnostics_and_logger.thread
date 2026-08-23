@@ -21,7 +21,7 @@ Component: "DiagnosticsLogger"
     * "Memory: Reuses pre-allocated thread-local buffers to eliminate dynamic memory allocations during terminal I/O."
 
   Models:
-      Model: "DiagnosticSeverity"
+    Model: "DiagnosticSeverity"
       Type: "Enum"
       Members:
         * "Error"
@@ -55,8 +55,8 @@ Component: "DiagnosticsLogger"
         * "elapsedMs: u64"
 
   Contracts:
-    Contract: "init"
-      Signature: "init(level: LogLevel) -> ()"
+    Contract: "setLogLevel"
+      Signature: "setLogLevel(level: LogLevel) -> ()"
       Inputs:
         * "level: LogLevel"
       Outputs:
@@ -74,6 +74,25 @@ Component: "DiagnosticsLogger"
         2. "Store LogLevel setting into internal global static logger configuration."
         3. "Return unit type ()."
 
+    Contract: "getLogLevel"
+      Signature: "getLogLevel() -> LogLevel"
+      Inputs:
+        * "none: ()"
+      Outputs:
+        * "level: LogLevel"
+      Requires:
+        * "Global logger state is initialized."
+      Ensures:
+        * "Returns the active LogLevel setting, defaulting to Normal if read access fails."
+      Precondition:
+        * "None."
+      Postcondition:
+        * "Active LogLevel is retrieved without altering state."
+      Process:
+        1. "Attempt to acquire read lock on internal global static logger configuration."
+        2. "If lock acquisition succeeds, return active LogLevel enum variant."
+        3. "If lock acquisition fails, return LogLevel::Normal as fallback."
+
     Contract: "logDiagnostic"
       Signature: "logDiagnostic(diagnostic: &Diagnostic, sourceCode: Option<&str>) -> ()"
       Inputs:
@@ -90,11 +109,12 @@ Component: "DiagnosticsLogger"
       Postcondition:
         * "Formatted diagnostic output string is flushed to stderr stream."
       Process:
-        1. "Inspect diagnostic.severity to assign terminal color formatting (Red for Error, Yellow for Warning, Blue for Info)."
-        2. "Construct top header string with path, line number, column, and diagnostic code (e.g., error[CMP001]: specs/cli.thread:14:2)."
-        3. "Append diagnostic.message text beneath the header string."
-        4. "If sourceCode string is provided, locate target line, format gutter, and render column pointer marker."
-        5. "Flush formatted diagnostic card buffer to stderr stream."
+        1. "Retrieve active log level threshold via getLogLevel."
+        2. "Inspect diagnostic.severity to assign terminal color formatting (Red for Error, Yellow for Warning, Blue for Info)."
+        3. "Construct top header string with path, line number, column, and diagnostic code (e.g., error[CMP001]: specs/cli.thread:14:2)."
+        4. "Append diagnostic.message text beneath the header string."
+        5. "If sourceCode string is provided, locate target line, format gutter, and render column pointer marker."
+        6. "Flush formatted diagnostic card buffer to stderr stream."
 
     Contract: "logInfo"
       Signature: "logInfo(message: &str, levelThreshold: LogLevel) -> ()"
@@ -112,10 +132,11 @@ Component: "DiagnosticsLogger"
       Postcondition:
         * "Message line is written to stdout stream."
       Process:
-        1. "Compare configured global LogLevel with levelThreshold argument."
-        2. "If active LogLevel is lower than levelThreshold, suppress output and return immediately."
-        3. "Prepend informational status prefix (e.g., [INFO] or [WEAVE]) to message string."
-        4. "Write formatted line to stdout stream."
+        1. "Retrieve active log level threshold via getLogLevel."
+        2. "Compare active LogLevel with levelThreshold argument."
+        3. "If active LogLevel is lower than levelThreshold, suppress output and return immediately."
+        4. "Prepend informational status prefix (e.g., [INFO] or [WEAVE]) to message string."
+        5. "Write formatted line to stdout stream."
 
     Contract: "renderSummary"
       Signature: "renderSummary(summary: &ExecutionSummary) -> ()"
@@ -132,6 +153,7 @@ Component: "DiagnosticsLogger"
       Postcondition:
         * "Final execution report status is output to the terminal."
       Process:
-        1. "Evaluate summary.errorCount metric."
-        2. "If errorCount is greater than 0, construct red failure summary card and write block to stderr stream."
-        3. "If errorCount is 0, construct green success report card listing all written document paths, append totals, and write block to stdout stream."
+        1. "Retrieve active log level threshold via getLogLevel."
+        2. "Evaluate summary.errorCount metric."
+        3. "If errorCount is greater than 0, construct red failure summary card and write block to stderr stream."
+        4. "If errorCount is 0, construct green success report card listing all written document paths, append totals, and write block to stdout stream."

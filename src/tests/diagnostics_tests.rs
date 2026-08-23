@@ -6,7 +6,7 @@ Purpose: Integration tests for the DiagnosticsLogger component verifying multipl
 #![allow(non_snake_case)]
 
 use loom::helpers::diagnostics::{
-    logDiagnostic, logInfo, renderSummary, setActivityLevel, Diagnostic, DiagnosticSeverity,
+    logDiagnostic, logInfo, renderSummary, setLogLevel, Diagnostic, DiagnosticSeverity,
     ExecutionSummary, LogLevel,
 };
 
@@ -125,7 +125,7 @@ Gives:
 #[test]
 fn testLogDiagnosticWarningInQuietLogLevel() -> ()
 {
-    setActivityLevel(LogLevel::Quiet);
+    setLogLevel(LogLevel::Quiet);
     let diag = createWarningDiagnostic();
     logDiagnostic(&diag, None);
 }
@@ -142,7 +142,7 @@ Gives:
 #[test]
 fn testLogDiagnosticWarningInVerboseLogLevel() -> ()
 {
-    setActivityLevel(LogLevel::Verbose);
+    setLogLevel(LogLevel::Verbose);
     let diag = createWarningDiagnostic();
     logDiagnostic(&diag, None);
 }
@@ -159,7 +159,7 @@ Gives:
 #[test]
 fn testLogDiagnosticWarningInNormalLogLevel() -> ()
 {
-    setActivityLevel(LogLevel::Normal);
+    setLogLevel(LogLevel::Normal);
     let diag = createWarningDiagnostic();
     logDiagnostic(&diag, None);
 }
@@ -176,7 +176,7 @@ Gives:
 #[test]
 fn testLogDiagnosticErrorInQuietLogLevel() -> ()
 {
-    setActivityLevel(LogLevel::Quiet);
+    setLogLevel(LogLevel::Quiet);
     let diag = createErrorDiagnostic();
     logDiagnostic(&diag, None);
 }
@@ -193,7 +193,7 @@ Gives:
 #[test]
 fn testLogDiagnosticErrorInVerboseLogLevel() -> ()
 {
-    setActivityLevel(LogLevel::Verbose);
+    setLogLevel(LogLevel::Verbose);
     let diag = createErrorDiagnostic();
     logDiagnostic(&diag, None);
 }
@@ -210,7 +210,7 @@ Gives:
 #[test]
 fn testLogDiagnosticErrorInNormalLogLevel() -> ()
 {
-    setActivityLevel(LogLevel::Normal);
+    setLogLevel(LogLevel::Normal);
     let diag = createErrorDiagnostic();
     logDiagnostic(&diag, None);
 }
@@ -227,7 +227,7 @@ Gives:
 #[test]
 fn testLogDiagnosticInfoInQuietLogLevel() -> ()
 {
-    setActivityLevel(LogLevel::Quiet);
+    setLogLevel(LogLevel::Quiet);
     let diag = createInfoDiagnostic();
     logDiagnostic(&diag, None);
 }
@@ -244,7 +244,7 @@ Gives:
 #[test]
 fn testLogDiagnosticInfoInVerboseLogLevel() -> ()
 {
-    setActivityLevel(LogLevel::Verbose);
+    setLogLevel(LogLevel::Verbose);
     let diag = createInfoDiagnostic();
     logDiagnostic(&diag, None);
 }
@@ -261,7 +261,7 @@ Gives:
 #[test]
 fn testLogDiagnosticInfoInNormalLogLevel() -> ()
 {
-    setActivityLevel(LogLevel::Normal);
+    setLogLevel(LogLevel::Normal);
     let diag = createInfoDiagnostic();
     logDiagnostic(&diag, None);
 }
@@ -278,7 +278,7 @@ Gives:
 #[test]
 fn testLogInfoInQuietLevelWithThreeThresholds() -> ()
 {
-    setActivityLevel(LogLevel::Quiet);
+    setLogLevel(LogLevel::Quiet);
     logInfo("Quiet threshold - should not print", LogLevel::Quiet);
     logInfo("Normal threshold - should not print", LogLevel::Normal);
     logInfo("Verbose threshold - should not print", LogLevel::Verbose);
@@ -296,7 +296,7 @@ Gives:
 #[test]
 fn testLogInfoInNormalLevelWithThreeThresholds() -> ()
 {
-    setActivityLevel(LogLevel::Normal);
+    setLogLevel(LogLevel::Normal);
     logInfo("Quiet threshold - should print", LogLevel::Quiet);
     logInfo("Normal threshold - should print", LogLevel::Normal);
     logInfo("Verbose threshold - should not print", LogLevel::Verbose);
@@ -314,7 +314,7 @@ Gives:
 #[test]
 fn testLogInfoInVerboseLevelWithThreeThresholds() -> ()
 {
-    setActivityLevel(LogLevel::Verbose);
+    setLogLevel(LogLevel::Verbose);
     logInfo("Quiet threshold - should print", LogLevel::Quiet);
     logInfo("Normal threshold - should print", LogLevel::Normal);
     logInfo("Verbose threshold - should print", LogLevel::Verbose);
@@ -332,7 +332,7 @@ Gives:
 #[test]
 fn testRenderSummarySuccessInQuietLogLevel() -> ()
 {
-    setActivityLevel(LogLevel::Quiet);
+    setLogLevel(LogLevel::Quiet);
     let summary = createSuccessSummary();
     renderSummary(&summary);
 }
@@ -349,7 +349,7 @@ Gives:
 #[test]
 fn testRenderSummarySuccessInNormalLogLevel() -> ()
 {
-    setActivityLevel(LogLevel::Normal);
+    setLogLevel(LogLevel::Normal);
     let summary = createSuccessSummary();
     renderSummary(&summary);
 }
@@ -366,7 +366,7 @@ Gives:
 #[test]
 fn testRenderSummarySuccessInVerboseLogLevel() -> ()
 {
-    setActivityLevel(LogLevel::Verbose);
+    setLogLevel(LogLevel::Verbose);
     let summary = createSuccessSummary();
     renderSummary(&summary);
 }
@@ -383,7 +383,7 @@ Gives:
 #[test]
 fn testRenderSummaryFailureInQuietLogLevel() -> ()
 {
-    setActivityLevel(LogLevel::Quiet);
+    setLogLevel(LogLevel::Quiet);
     let summary = createFailureSummary();
     renderSummary(&summary);
 }
@@ -400,7 +400,7 @@ Gives:
 #[test]
 fn testRenderSummaryFailureInNormalLogLevel() -> ()
 {
-    setActivityLevel(LogLevel::Normal);
+    setLogLevel(LogLevel::Normal);
     let summary = createFailureSummary();
     renderSummary(&summary);
 }
@@ -417,7 +417,7 @@ Gives:
 #[test]
 fn testRenderSummaryFailureInVerboseLogLevel() -> ()
 {
-    setActivityLevel(LogLevel::Verbose);
+    setLogLevel(LogLevel::Verbose);
     let summary = createFailureSummary();
     renderSummary(&summary);
 }
