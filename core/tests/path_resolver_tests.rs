@@ -5,8 +5,9 @@ Purpose: Integration tests for the PathResolver component verifying path validat
 
 #![allow(non_snake_case)]
 
-use loom::helpers::path_resolver::{validatePath, resolvePath, getParentDir};
-use loom::models::path_resolver_models::{LoomPath, ResolverError};
+use loom::helpers::path_resolver::{
+    getParentDir, resolvePath, validatePath, LoomPath, ResolverError,
+};
 
 /**
  * Tests validatePath with a valid existing file.

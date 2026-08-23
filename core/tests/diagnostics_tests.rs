@@ -5,8 +5,10 @@ Purpose: Integration tests for the DiagnosticsLogger component verifying multipl
 
 #![allow(non_snake_case)]
 
-use loom::helpers::diagnostics::{init, logDiagnostic, logInfo, renderSummary};
-use loom::models::diagnostic_models::{Diagnostic, DiagnosticSeverity, LogLevel, ExecutionSummary};
+use loom::helpers::diagnostics::{
+    init, logDiagnostic, logInfo, renderSummary, Diagnostic, DiagnosticSeverity, ExecutionSummary,
+    LogLevel,
+};
 
 /**
  * Helper function to create a sample Warning diagnostic.

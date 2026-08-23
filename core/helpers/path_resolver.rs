@@ -1,12 +1,37 @@
 /*
 File Name: path_resolver.rs
-Purpose: Implementation of the PathResolver helper component for the Loom compiler.
+Purpose: Implementation of the PathResolver helper component and path resolver models for the Loom compiler.
 */
 
 #![allow(non_snake_case)]
 
-use crate::models::path_resolver_models::{LoomPath, ResolverError};
 use std::path::Path;
+
+/**
+ * Represents a resolved path containing both raw relative and canonical absolute formats.
+ *
+ * Members:
+ * 	absolute: The fully canonicalized absolute path string.
+ * 	relative: The original relative path string.
+ */
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LoomPath
+{
+    pub absolute: String,
+    pub relative: String,
+}
+
+/**
+ * Enumeration of possible path resolution errors.
+ */
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ResolverError
+{
+    PathNotFound,
+    CanonicalizationFailed,
+    InvalidPathString,
+    NotAFile,
+}
 
 /**
  * Checks if a path string is invalid or contains junk characters.

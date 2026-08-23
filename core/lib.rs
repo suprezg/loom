@@ -6,11 +6,6 @@ Purpose: Root library entry point for the Loom compiler.
 #![allow(non_snake_case)]
 
 /**
- * Module containing helper utilities and engines like diagnostics and loggers.
+ * Module containing helper utilities, diagnostics loggers, path resolvers, and models.
  */
 pub mod helpers;
-
-/**
- * Module containing structural models and enums representing compiler ASTs and diagnostics.
- */
-pub mod models;
