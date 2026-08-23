@@ -8,9 +8,9 @@ Purpose: Implementation of the DiagnosticsLogger helper component and diagnostic
 use std::sync::RwLock;
 use std::io::Write;
 
-/**
- * Severity level of a compiler or runtime diagnostic message.
- */
+/*
+Severity level of a compiler or runtime diagnostic message.
+*/
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum DiagnosticSeverity
 {
@@ -19,9 +19,9 @@ pub enum DiagnosticSeverity
     Info,
 }
 
-/**
- * Represents a single diagnostic report containing location metadata, a diagnostic code, and the explanation.
- */
+/*
+Represents a single diagnostic report containing location metadata, a diagnostic code, and the explanation.
+*/
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Diagnostic
 {
@@ -33,9 +33,9 @@ pub struct Diagnostic
     pub severity: DiagnosticSeverity,
 }
 
-/**
- * Verbosity level of the logger to control which levels of details are output to standard streams.
- */
+/*
+Verbosity level of the logger to control which levels of details are output to standard streams.
+*/
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum LogLevel
 {
@@ -44,9 +44,9 @@ pub enum LogLevel
     Verbose,
 }
 
-/**
- * Holds overall metrics, warnings, error counts, and target output logs for execution summary.
- */
+/*
+Holds overall metrics, warnings, error counts, and target output logs for execution summary.
+*/
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExecutionSummary
 {
@@ -59,65 +59,79 @@ pub struct ExecutionSummary
 
 static ACTIVE_LOG_LEVEL: RwLock<LogLevel> = RwLock::new(LogLevel::Normal);
 
-/**
- * Initializes the global diagnostics logger with a specified verbosity level.
- *
- * Takes:
- * 	level (LogLevel): The log level to set as the active threshold.
- *
- * Gives:
- * 	(): Unit type.
- */
-pub fn init(level: LogLevel) -> ()
+/*
+Retrieves the active log level threshold, defaulting to Normal if read lock fails.
+
+Takes:
+	None.
+
+Gives:
+	LogLevel: The active log level.
+*/
+fn getActivityLevel() -> LogLevel
+{
+    match ACTIVE_LOG_LEVEL.read() {
+        Ok(level) => *level,
+        Err(_) => LogLevel::Normal,
+    }
+}
+
+/*
+Initializes the global diagnostics logger with a specified verbosity level.
+
+Takes:
+	level (LogLevel): The log level to set as the active threshold.
+
+Gives:
+	(): Unit type.
+*/
+pub fn setActivityLevel(level: LogLevel) -> ()
 {
     if let Ok(mut activeLevel) = ACTIVE_LOG_LEVEL.write() {
         *activeLevel = level;
     }
 }
 
-/**
- * Formats and logs a diagnostic message with color-coded severity and optional code snippet.
- *
- * Takes:
- * 	diagnostic (&Diagnostic): The diagnostic report structure.
- * 	sourceCode (Option<&str>): The optional raw source code for context rendering.
- *
- * Gives:
- * 	(): Unit type.
- */
+/*
+Formats and logs a diagnostic message with color-coded severity and optional code snippet.
+
+Takes:
+	diagnostic (&Diagnostic): The diagnostic report structure.
+	sourceCode (Option<&str>): The optional raw source code for context rendering.
+
+Gives:
+	(): Unit type.
+*/
 pub fn logDiagnostic(diagnostic: &Diagnostic, sourceCode: Option<&str>) -> ()
 {
-    let activeLevel = match ACTIVE_LOG_LEVEL.read() {
-        Ok(level) => *level,
-        Err(_) => LogLevel::Normal,
-    };
-    
+    let activeLevel = getActivityLevel();
+
     let shouldLog = match diagnostic.severity {
         DiagnosticSeverity::Error => true,
         DiagnosticSeverity::Warning => activeLevel >= LogLevel::Normal,
         DiagnosticSeverity::Info => activeLevel >= LogLevel::Verbose,
     };
-    
+
     if !shouldLog {
         return;
     }
-    
+
     let severityStr = match diagnostic.severity {
         DiagnosticSeverity::Error => "error",
         DiagnosticSeverity::Warning => "warning",
         DiagnosticSeverity::Info => "info",
     };
-    
+
     let colorCode = match diagnostic.severity {
         DiagnosticSeverity::Error => "\x1b[31m",
         DiagnosticSeverity::Warning => "\x1b[33m",
         DiagnosticSeverity::Info => "\x1b[34m",
     };
-    
+
     let mut output = String::new();
     output.push_str(&format!("{colorCode}{severityStr}[{}]\x1b[0m: {}:{}:{}\n", diagnostic.code, diagnostic.path, diagnostic.line, diagnostic.column));
     output.push_str(&format!("  {}\n", diagnostic.message));
-    
+
     if let Some(codeStr) = sourceCode {
         let lines: Vec<&str> = codeStr.lines().collect();
         if diagnostic.line > 0 && diagnostic.line <= lines.len() {
@@ -130,64 +144,58 @@ pub fn logDiagnostic(diagnostic: &Diagnostic, sourceCode: Option<&str>) -> ()
             output.push_str(&format!("{} | {}{}^\x1b[0m\n", padding, spaces, colorCode));
         }
     }
-    
+
     let stderr = std::io::stderr();
     let mut handle = stderr.lock();
     let _ = write!(handle, "{}", output);
 }
 
-/**
- * Logs an informational message to stdout if the active log level meets the threshold.
- *
- * Takes:
- * 	message (&str): The status or informational message.
- * 	levelThreshold (LogLevel): The required minimum log level.
- *
- * Gives:
- * 	(): Unit type.
- */
+/*
+Logs an informational message to stdout if the active log level meets the threshold.
+
+Takes:
+	message (&str): The status or informational message.
+	levelThreshold (LogLevel): The required minimum log level.
+
+Gives:
+	(): Unit type.
+*/
 pub fn logInfo(message: &str, levelThreshold: LogLevel) -> ()
 {
-    let activeLevel = match ACTIVE_LOG_LEVEL.read() {
-        Ok(level) => *level,
-        Err(_) => LogLevel::Normal,
-    };
-    
+    let activeLevel = getActivityLevel();
+
     if activeLevel < levelThreshold {
         return;
     }
-    
+
     let formattedMessage = if message.starts_with('[') {
         message.to_string()
     } else {
         format!("[INFO] {}", message)
     };
-    
+
     let stdout = std::io::stdout();
     let mut handle = stdout.lock();
     let _ = writeln!(handle, "{}", formattedMessage);
 }
 
-/**
- * Renders the execution summary (success or failure) to stdout or stderr.
- *
- * Takes:
- * 	summary (&ExecutionSummary): The execution statistics.
- *
- * Gives:
- * 	(): Unit type.
- */
+/*
+Renders the execution summary (success or failure) to stdout or stderr.
+
+Takes:
+	summary (&ExecutionSummary): The execution statistics.
+
+Gives:
+	(): Unit type.
+*/
 pub fn renderSummary(summary: &ExecutionSummary) -> ()
 {
-    let activeLevel = match ACTIVE_LOG_LEVEL.read() {
-        Ok(level) => *level,
-        Err(_) => LogLevel::Normal,
-    };
-    
+    let activeLevel = getActivityLevel();
+
     if activeLevel == LogLevel::Quiet {
         return;
     }
-    
+
     if summary.errorCount > 0 {
         let mut output = String::new();
         output.push_str("\n\x1b[31m========================================\x1b[0m\n");
@@ -196,7 +204,7 @@ pub fn renderSummary(summary: &ExecutionSummary) -> ()
         output.push_str(&format!("Warnings: {}\n", summary.warningCount));
         output.push_str(&format!("Elapsed Time: {}ms\n", summary.elapsedMs));
         output.push_str("\x1b[31m========================================\x1b[0m\n");
-        
+
         let stderr = std::io::stderr();
         let mut handle = stderr.lock();
         let _ = write!(handle, "{}", output);
@@ -212,7 +220,7 @@ pub fn renderSummary(summary: &ExecutionSummary) -> ()
         output.push_str(&format!("Warnings: {}\n", summary.warningCount));
         output.push_str(&format!("Elapsed Time: {}ms\n", summary.elapsedMs));
         output.push_str("\x1b[32m========================================\x1b[0m\n");
-        
+
         let stdout = std::io::stdout();
         let mut handle = stdout.lock();
         let _ = write!(handle, "{}", output);
