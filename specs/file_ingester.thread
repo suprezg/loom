@@ -35,7 +35,6 @@ Component: "FileIngester"
     Model: "IngestError"
       Type: "Enum"
       Members:
-        * "FileNotFound"
         * "PermissionDenied"
         * "InvalidUtf8"
         * "IoError"
@@ -57,28 +56,27 @@ Component: "FileIngester"
         * "Target file handle is closed immediately after reading."
       Process:
         1. "Attempt to open OS file handle for given path string."
-        2. "If handle creation fails due to missing file, return IngestError::FileNotFound."
-        3. "If handle creation fails due to permissions, return IngestError::PermissionDenied."
-        4. "Read raw file bytes into string buffer using std::fs::read_to_string."
-        5. "If byte decoding fails, return IngestError::InvalidUtf8."
-        6. "Return Ok(String) containing raw file content."
+        2. "If handle creation fails due to permissions, return IngestError::PermissionDenied."
+        3. "Read raw file bytes into string buffer using std::fs::read_to_string."
+        4. "If byte decoding fails, return IngestError::InvalidUtf8."
+        5. "Return Ok(String) containing raw file content."
 
-    Contract: "readFilePayload"
-      Signature: "readFilePayload(loomPath: &LoomPath) -> Result<FilePayload, IngestError>"
+    Contract: "giveFilePayload"
+      Signature: "giveFilePayload(path: &str) -> Result<FilePayload, IngestError>"
       Inputs:
-        * "loomPath: &LoomPath"
+        * "path: &str"
       Outputs:
         * "payload: Result<FilePayload, IngestError>"
       Requires:
-        * "LoomPath contains valid absolute system path and relative display path."
+        * "Target file exists on disk and process has read permissions."
       Ensures:
-        * "Returns a FilePayload containing the relative path string and raw text content buffer."
+        * "Returns a FilePayload containing the provided path string and raw text content buffer."
       Precondition:
-        * "loomPath.absolute is non-empty."
+        * "Path string is non-empty."
       Postcondition:
         * "File handle is closed and memory is allocated strictly for content payload."
       Process:
-        1. "Call readFile using loomPath.absolute as target path."
+        1. "Call readFile using given path string as target path."
         2. "If readFile returns IngestError, bubble up error result."
-        3. "Construct FilePayload struct using loomPath.relative as path and read content as content."
+        3. "Construct FilePayload struct using given path string as path and read content as content."
         4. "Return Ok(FilePayload)."
