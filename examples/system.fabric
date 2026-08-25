@@ -1,0 +1,32 @@
+system "Loom Macro System Architecture"
+
+# 1. Imports / Specification Source Files
+import "examples/authentication.thread"
+import "examples/auth_service.thread"
+import "examples/auth_protocol.thread"
+import "examples/app_storage.thread"
+
+# 2. Canvas Cluster Groups (Visual Bounding Boxes on Home Page Canvas)
+group "Identity & Access Control"
+{
+    Feature.Authentication
+    Component.AuthService
+    Component.VaultEngine
+}
+
+group "Persistence & Security Audit"
+{
+    Storage.AppStorage::users
+    Storage.AppStorage::audit_logs
+    Storage.AppStorage::plugins
+    Protocol.AuthProtocol::AuditStream
+}
+
+# 3. Macro Connections & Topology Edges
+Feature.Authentication -> Component.AuthService::login : "Triggers user login workflow"
+Component.AuthService::login -> Component.VaultEngine::verifyManifest : "Validates binary compliance"
+Component.AuthService::login -> Storage.AppStorage::users : "Queries bcrypt password hash"
+Component.AuthService::login -> Protocol.AuthProtocol::TokenBroadcastPipe : "Broadcasts AuthResult::Success"
+Component.AuthService::login -> Protocol.AuthProtocol::AuditStream : "Emits security audit event"
+Protocol.AuthProtocol::AuditStream -> Storage.AppStorage::audit_logs : "Persists audit trail"
+Component.VaultEngine::verifyManifest -> Storage.AppStorage::plugins : "Queries installed plugins"

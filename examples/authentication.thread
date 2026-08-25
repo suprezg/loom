@@ -1,0 +1,88 @@
+Feature Authentication
+{
+    !Note [
+        Governs user identity verification, session creation, and security compliance.
+        This feature enforces OAuth2 tokens and strict password complexity rules.
+    ]
+
+    !Note [
+        All authentication events are audited and logged to the central security stream
+        to ensure compliance with enterprise threat monitoring standards.
+    ]
+
+    !Diagram SequenceLogin
+    [
+        ```mermaid
+        sequenceDiagram
+            autonumber
+            actor User as User
+            participant LoginUI as LoginUI
+            participant AuthService as AuthService
+            participant VaultEngine as VaultEngine
+
+            User->>LoginUI: Visits website
+            LoginUI-->>User: Serves login page
+            User->>LoginUI: Clicks login button
+            LoginUI->>+AuthService: login("user", "pass")
+            AuthService->>+VaultEngine: verifyManifest("manifest.json")
+            VaultEngine-->>-AuthService: ManifestStatus::Valid
+            AuthService-->>-LoginUI: AuthResult::Success
+            LoginUI-->>User: Displays success toast and redirects to dashboard
+        ```
+    ]
+
+    !Diagram StateLogin
+    [
+        ```mermaid
+        stateDiagram-v2
+            [*] --> LoggedOut
+            LoggedOut --> Authenticating : ClickLogin
+            Authenticating --> LoggedIn : AuthResult::Success
+            Authenticating --> LoggedOut : AuthResult::InvalidCredentials
+            LoggedIn --> LoggedOut : ClickLogout
+        ```
+    ]
+
+    Background
+    {
+        Given "the system authentication service is initialized and running"
+        And "the local encrypted database connection pool is active"
+    }
+
+    Rule "User Login Workflow"
+    {
+        @component(AuthService::login)
+        @component(VaultEngine::verifyManifest)
+        @diagram(SequenceLogin)
+        @diagram(StateLogin)
+        Scenario "Successful user login with valid credentials"
+        {
+            Given "a registered user is on the login page"
+            When "the user enters valid credentials and clicks login"
+            Then "the system authenticates the user and redirects to the main dashboard"
+        }
+
+        @component(AuthService::login)
+        Scenario "Unsuccessful user login with invalid password"
+        {
+            Given "a registered user is on the login page"
+            When "the user enters an incorrect password"
+            Then "the system displays an error toast message 'Invalid credentials'"
+        }
+
+        @component(AuthService::login)
+        Scenario Outline "Validating login credentials against multiple user roles"
+        {
+            Given "a user with username <username> and password <password>"
+            When "the user submits the login form"
+            Then "the authentication result should be <status>"
+
+            Examples
+            {
+                | "username" | "password" | "status"  |
+                | "alice"    | "pass123"  | "success" |
+                | "bob"      | "wrong"    | "failure" |
+            }
+        }
+    }
+}

@@ -1,5 +1,5 @@
 /*
-File Name: helpers.rs
+File Name: mod.rs
 Purpose: Exports helper submodules like diagnostics, path resolver, and file ingester within the Loom compiler library.
 */
 

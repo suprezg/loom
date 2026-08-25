@@ -9,3 +9,9 @@ Purpose: Root library entry point for the Loom compiler.
  * Module containing helper utilities, diagnostics loggers, path resolvers, and models.
  */
 pub mod helpers;
+
+/**
+ * Module containing Pest parsers for .thread and .fabric specifications.
+ */
+pub mod parser;
+

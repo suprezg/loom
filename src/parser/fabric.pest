@@ -1,0 +1,42 @@
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT    = _{ ("#" ~ (!"\n" ~ ANY)*) | ("/*" ~ (!"*/" ~ ANY)* ~ "*/") }
+
+// ==========================================
+// Fabric File Grammar
+// ==========================================
+
+fabric_file = { SOI ~ system_decl ~ import_stmt* ~ fabric_body_item* ~ EOI }
+
+system_decl = { "system" ~ string_lit }
+import_stmt = { "import" ~ string_lit }
+
+fabric_body_item = {
+    group_block
+  | connection_stmt
+}
+
+group_block = {
+    "group" ~ string_lit ~ "{" ~
+    entity_ref* ~
+    "}"
+}
+
+connection_stmt = {
+    entity_ref ~ "->" ~ entity_ref ~ (":" ~ string_lit)?
+}
+
+entity_ref = {
+    entity_kind ~ "." ~ scoped_path
+}
+
+entity_kind = {
+    "Feature"
+  | "Component"
+  | "Storage"
+  | "Protocol"
+}
+
+string_lit  = @{ "\"" ~ (esc_char | (!"\"" ~ ANY))* ~ "\"" }
+esc_char    = _{ "\\" ~ ANY }
+ident       = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-")* }
+scoped_path = @{ ident ~ ("::" ~ ident)* }
