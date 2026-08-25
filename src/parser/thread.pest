@@ -1,0 +1,269 @@
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT    = _{ ("#" ~ (!"\n" ~ ANY)*) | ("/*" ~ (!"*/" ~ ANY)* ~ "*/") }
+
+// ==========================================
+// Top-Level Thread File Rule
+// ==========================================
+
+thread_file = { SOI ~ entity_decl* ~ EOI }
+
+entity_decl = {
+    feature_entity
+  | component_entity
+  | protocol_entity
+  | storage_entity
+}
+
+// ==========================================
+// Shared Primitives & Tokens
+// ==========================================
+
+string_lit   = @{ "\"" ~ (esc_char | (!"\"" ~ ANY))* ~ "\"" }
+esc_char     = _{ "\\" ~ ANY }
+ident        = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-")* }
+scoped_path  = @{ ident ~ ("::" ~ ident)* }
+
+note_block   = { "!Note" ~ "[" ~ note_content ~ "]" }
+note_content = @{ (!"]" ~ ANY)* }
+
+diagram_block   = { "!Diagram" ~ ident ~ "[" ~ "```mermaid" ~ diagram_content ~ "```" ~ "]" }
+diagram_content = @{ (!"```" ~ ANY)* }
+
+// Decorators (Universal 4-Entity Connectors using unquoted scoped_path)
+decorator = {
+    feature_decorator
+  | component_decorator
+  | storage_decorator
+  | protocol_decorator
+  | diagram_decorator
+}
+
+feature_decorator   = { "@feature" ~ "(" ~ scoped_path ~ ")" }
+component_decorator = { "@component" ~ "(" ~ scoped_path ~ ")" }
+storage_decorator   = { "@storage" ~ "(" ~ scoped_path ~ ")" }
+protocol_decorator  = { "@protocol" ~ "(" ~ scoped_path ~ ")" }
+diagram_decorator   = { "@diagram" ~ "(" ~ ident ~ ")" }
+
+// ==========================================
+// 1. Feature Entity Grammar
+// ==========================================
+
+feature_entity = {
+    "Feature" ~ ident ~ "{" ~
+    note_block* ~
+    diagram_block* ~
+    background_block? ~
+    feature_body_item* ~
+    "}"
+}
+
+feature_body_item = {
+    rule_block
+  | scenario_block
+  | scenario_outline_block
+}
+
+background_block = {
+    "Background" ~ "{" ~
+    step_stmt* ~
+    "}"
+}
+
+rule_block = {
+    decorator* ~
+    "Rule" ~ string_lit ~ "{" ~
+    (scenario_block | scenario_outline_block)* ~
+    "}"
+}
+
+scenario_block = {
+    decorator* ~
+    "Scenario" ~ string_lit ~ "{" ~
+    step_stmt* ~
+    "}"
+}
+
+scenario_outline_block = {
+    decorator* ~
+    "Scenario Outline" ~ string_lit ~ "{" ~
+    step_stmt* ~
+    examples_block ~
+    "}"
+}
+
+step_stmt = { step_kw ~ string_lit }
+step_kw   = { "Given" | "When" | "Then" | "And" | "But" }
+
+examples_block = {
+    "Examples" ~ "{" ~
+    examples_row+ ~
+    "}"
+}
+
+examples_row  = { "|" ~ (examples_cell ~ "|")+ }
+examples_cell = { string_lit }
+
+// ==========================================
+// 2. Component Entity Grammar
+// ==========================================
+
+component_entity = {
+    "Component" ~ ident ~ "{" ~
+    note_block* ~
+    diagram_block* ~
+    component_body_item* ~
+    "}"
+}
+
+component_body_item = {
+    invariants_block
+  | model_block
+  | contract_block
+}
+
+invariants_block = {
+    "Invariants" ~ "{" ~
+    string_lit* ~
+    "}"
+}
+
+model_block = {
+    decorator* ~
+    "Model" ~ ident ~ "{" ~
+    model_type_stmt ~
+    members_block? ~
+    "}"
+}
+
+model_type_stmt = { "Type" ~ string_lit }
+
+members_block = {
+    "Members" ~ "{" ~
+    model_member* ~
+    "}"
+}
+
+model_member = {
+    string_lit ~ (":" ~ string_lit)?
+}
+
+contract_block = {
+    decorator* ~
+    "Contract" ~ ident ~ "{" ~
+    contract_body_item* ~
+    "}"
+}
+
+contract_body_item = {
+    signature_stmt
+  | requires_stmt
+  | ensures_stmt
+  | precondition_block
+  | postcondition_block
+  | process_block
+  | errors_block
+}
+
+signature_stmt = { "Signature" ~ string_lit ~ ("->" ~ string_lit)? }
+requires_stmt  = { "Requires" ~ string_lit }
+ensures_stmt   = { "Ensures" ~ string_lit }
+
+precondition_block  = { "Precondition" ~ "{" ~ string_lit* ~ "}" }
+postcondition_block = { "Postcondition" ~ "{" ~ string_lit* ~ "}" }
+errors_block        = { "Errors" ~ "{" ~ string_lit* ~ "}" }
+
+process_block = {
+    "Process" ~ "{" ~
+    process_step* ~
+    "}"
+}
+
+process_step = { ASCII_DIGIT+ ~ "." ~ string_lit }
+
+// ==========================================
+// 3. Protocol Entity Grammar
+// ==========================================
+
+protocol_entity = {
+    "Protocol" ~ ident ~ "{" ~
+    note_block* ~
+    diagram_block* ~
+    channel_block* ~
+    "}"
+}
+
+channel_block = {
+    decorator* ~
+    "Channel" ~ ident ~ "{" ~
+    channel_body_item* ~
+    "}"
+}
+
+channel_body_item = {
+    pattern_stmt
+  | transport_stmt
+  | sender_stmt
+  | receiver_stmt
+  | payload_stmt
+  | errors_block
+}
+
+pattern_stmt   = { "Pattern" ~ string_lit }
+transport_stmt = { "Transport" ~ string_lit }
+sender_stmt    = { "Sender" ~ string_lit }
+receiver_stmt  = { "Receiver" ~ string_lit }
+payload_stmt   = { "Payload" ~ string_lit }
+
+// ==========================================
+// 4. Storage Entity Grammar
+// ==========================================
+
+storage_entity = {
+    "Storage" ~ ident ~ "{" ~
+    note_block* ~
+    diagram_block* ~
+    engine_stmt? ~
+    table_block* ~
+    "}"
+}
+
+engine_stmt = { "Engine" ~ string_lit }
+
+table_block = {
+    decorator* ~
+    "Table" ~ ident ~ "{" ~
+    table_body_item* ~
+    "}"
+}
+
+table_body_item = {
+    fields_block
+  | indexes_block
+  | relations_block
+}
+
+fields_block = {
+    "Fields" ~ "{" ~
+    field_entry* ~
+    "}"
+}
+
+field_entry = { string_lit ~ ":" ~ string_lit }
+
+indexes_block = {
+    "Indexes" ~ "{" ~
+    index_decl* ~
+    "}"
+}
+
+index_decl = { ident ~ "(" ~ ident ~ ")" }
+
+relations_block = {
+    "Relations" ~ "{" ~
+    db_relation* ~
+    "}"
+}
+
+db_relation = { column_ref ~ cardinality ~ column_ref }
+column_ref  = @{ ident ~ "." ~ ident }
+cardinality = { "1:N" | "N:1" | "1:1" | "N:M" }
