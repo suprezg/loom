@@ -1,0 +1,89 @@
+Storage AppStorage
+{
+    !Note [
+        Local encrypted storage engine for persistent application metadata, user account credentials,
+        and security compliance audit logs.
+    ]
+
+    !Diagram SchemaERD
+    [
+        ```mermaid
+        erDiagram
+            users ||--o{ audit_logs : generates
+            users ||--o{ plugins : installs
+        ```
+    ]
+
+    Engine "SQLite3 / SQLCipher"
+
+    @feature(Authentication)
+    @component(AuthService::login)
+    @component(AuthService::Credentials)
+    @diagram(SchemaERD)
+    Table users
+    {
+        Fields
+        {
+            "id": "UUID [PrimaryKey, NonNull]"
+            "username": "String(64) [NonNull, Unique]"
+            "password_hash": "String(255) [NonNull]"
+            "status": "String(32) [NonNull, Default('active')]"
+            "created_at": "Date [NonNull, Default(NOW)]"
+        }
+
+        Indexes
+        {
+            idx_user_username (username)
+            idx_user_status (status)
+        }
+    }
+
+    @feature(Authentication)
+    @component(AuthService::login)
+    @component(AuthService::AuditEvent)
+    @protocol(AuthProtocol::AuditStream)
+    @diagram(SchemaERD)
+    Table audit_logs
+    {
+        Fields
+        {
+            "id": "UUID [PrimaryKey, NonNull]"
+            "user_id": "UUID [NonNull, ForeignKey(users.id)]"
+            "event_type": "String(64) [NonNull]"
+            "ip_address": "String(45) [NonNull]"
+            "timestamp": "Date [NonNull, Default(NOW)]"
+        }
+
+        Indexes
+        {
+            idx_audit_user (user_id)
+            idx_audit_timestamp (timestamp)
+        }
+
+        Relations
+        {
+            users.id 1:N audit_logs.user_id
+        }
+    }
+
+    @feature(Authentication)
+    @component(VaultEngine::verifyManifest)
+    @component(VaultEngine::PluginManifest)
+    @diagram(SchemaERD)
+    Table plugins
+    {
+        Fields
+        {
+            "id": "UUID [PrimaryKey, NonNull]"
+            "name": "String(128) [NonNull, Unique]"
+            "version": "String(32) [NonNull]"
+            "entrypoint": "String(255) [NonNull]"
+            "installed_at": "Date [NonNull, Default(NOW)]"
+        }
+
+        Indexes
+        {
+            idx_plugin_name (name)
+        }
+    }
+}

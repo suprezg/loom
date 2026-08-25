@@ -1,0 +1,194 @@
+Component AuthService
+{
+    !Note [
+        Core authentication service managing user identity validation, credential checks,
+        and session token generation across the application lifetime.
+    ]
+
+    !Note [
+        Integrates with VaultEngine to verify developer binary manifests during login operations.
+    ]
+
+    !Diagram LoginFlow
+    [
+        ```mermaid
+        flowchart TD
+            Start([Start login]) --> FetchHash[Fetch password hash from AppStorage::users]
+            FetchHash --> VerifyHash{Verify Hash?}
+            VerifyHash -- Invalid --> ReturnInvalid[Return AuthResult::InvalidCredentials]
+            VerifyHash -- Valid --> CallVault[Call VaultEngine::verifyManifest]
+            CallVault --> EmitToken[Broadcast token to AuthProtocol::TokenBroadcastPipe]
+            EmitToken --> ReturnSuccess[Return AuthResult::Success]
+        ```
+    ]
+
+    Invariants
+    {
+        "SecurityBoundary: Failed login attempts MUST be logged and rate-limited."
+        "CredentialPrivacy: User passwords MUST NEVER be stored or transmitted in plaintext."
+    }
+
+    Model AuthResult
+    {
+        Type "Enum"
+        Members
+        {
+            "Success"
+            "InvalidCredentials"
+            "LockedOut"
+        }
+    }
+
+    @storage(AppStorage::users)
+    Model Credentials
+    {
+        Type "Struct"
+        Members
+        {
+            "username": "String (min_length=3, max_length=64)"
+            "password": "String (min_length=8)"
+        }
+    }
+
+    @storage(AppStorage::audit_logs)
+    Model AuditEvent
+    {
+        Type "Struct"
+        Members
+        {
+            "user_id": "UUID"
+            "event_type": "String (max_length=64)"
+            "ip_address": "String (max_length=45)"
+            "timestamp": "Date"
+        }
+    }
+
+    @storage(AppStorage::users)
+    @storage(AppStorage::audit_logs)
+    @protocol(AuthProtocol::TokenBroadcastPipe)
+    @protocol(AuthProtocol::AuditStream)
+    @diagram(LoginFlow)
+    Contract login
+    {
+        Signature "login(credentials: &Credentials)" -> "AuthResult"
+
+        Requires "User account record exists in AppStorage::users database."
+
+        Ensures "Returns AuthResult::Success if credentials match and VaultEngine verifies manifest."
+
+        Precondition
+        {
+            "Username string is valid UTF-8."
+            "Password string length is greater than or equal to 8."
+        }
+
+        Postcondition
+        {
+            "Session token is generated and broadcast to AuthProtocol::TokenBroadcastPipe."
+            "Security audit event is logged to AuthProtocol::AuditStream."
+        }
+
+        Process
+        {
+            1. "Fetch user password hash from AppStorage::users."
+            2. "Verify password against stored bcrypt hash."
+            3. "Call VaultEngine::verifyManifest to check binary compliance."
+            4. "Emit session token broadcast and return AuthResult::Success."
+        }
+
+        Errors
+        {
+            "InvalidCredentials"
+            "AccountLocked"
+            "SystemError"
+        }
+    }
+}
+
+Component VaultEngine
+{
+    !Note [
+        ACL Vault engine responsible for verifying manifest signatures, validating plugin bundles,
+        and isolating sandbox execution permissions across the application lifetime.
+    ]
+
+    !Diagram VerifyProcess
+    [
+        ```mermaid
+        flowchart TD
+            Start([Start verifyManifest]) --> Read[Read raw bytes from disk]
+            Read --> Decode{Decode JSON?}
+            Decode -- Failed --> InvalidFormat[Return InvalidFormat Error]
+            Decode -- Success --> VerifySig{Verify Signature?}
+            VerifySig -- Failed --> InvalidSig[Return InvalidSignature Error]
+            VerifySig -- Valid --> ReturnValid[Return ManifestStatus::Valid]
+        ```
+    ]
+
+    Invariants
+    {
+        "SecurityBoundary: Non-compliant binaries MUST NOT execute in main process thread."
+        "SignatureIntegrity: Manifest SHA-256 hash MUST match developer public key."
+    }
+
+    Model ManifestStatus
+    {
+        Type "Enum"
+        Members
+        {
+            "Valid"
+            "InvalidSignature"
+            "MissingArtifacts"
+        }
+    }
+
+    @storage(AppStorage::plugins)
+    Model PluginManifest
+    {
+        Type "Struct"
+        Members
+        {
+            "id": "UUID"
+            "name": "String (min_length=1, max_length=128)"
+            "version": "String"
+            "entrypoint": "String"
+        }
+    }
+
+    @storage(AppStorage::plugins)
+    @protocol(AuthProtocol::AuditStream)
+    @diagram(VerifyProcess)
+    Contract verifyManifest
+    {
+        Signature "verifyManifest(path: &str)" -> "Result<ManifestStatus, VaultError>"
+
+        Requires "File system handle to manifest path is readable."
+
+        Ensures "Returns ManifestStatus::Valid if signature and structure comply."
+
+        Precondition
+        {
+            "Path string is non-empty and well-formed UTF-8."
+        }
+
+        Postcondition
+        {
+            "Manifest handle is closed immediately after evaluation."
+        }
+
+        Process
+        {
+            1. "Read raw manifest bytes using std::fs::read."
+            2. "Decode JSON payload into PluginManifest struct."
+            3. "Verify cryptographic signature against developer public key."
+            4. "Return ManifestStatus::Valid on clean match."
+        }
+
+        Errors
+        {
+            "InvalidSignature"
+            "FileNotFound"
+            "CorruptedState"
+        }
+    }
+}
