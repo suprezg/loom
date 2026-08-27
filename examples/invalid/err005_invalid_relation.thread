@@ -1,0 +1,11 @@
+# What is wrong: Storage relation line uses arrow syntax 'users.id -> audit_logs.user_id'. Error displayed: error[ERR005]: Syntax error: Invalid database relation. Expected format 'table1.col 1:N table2.col'.
+Storage AppStorage
+{
+    Table audit_logs
+    {
+        Relations
+        {
+            users.id -> audit_logs.user_id
+        }
+    }
+}

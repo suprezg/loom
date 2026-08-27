@@ -1,0 +1,7 @@
+# What is wrong: !Diagram block uses invalid brace syntax instead of square brackets. Error displayed: error[ERR009]: Syntax error: Invalid diagram declaration. Expected '!Diagram DiagramName [' followed by '```mermaid ... ```'.
+Component AuthService
+{
+    !Diagram SequenceLogin
+    {
+    }
+}

@@ -1,0 +1,8 @@
+# What is wrong: Given step prose is unquoted 'Given the system is running'. Error displayed: error[ERR012]: Syntax error: Unquoted step text in Given step. Prose must be enclosed in double quotes.
+Feature Authentication
+{
+    Background
+    {
+        Given the system is running
+    }
+}

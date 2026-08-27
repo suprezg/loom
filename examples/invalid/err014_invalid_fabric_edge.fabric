@@ -1,0 +1,4 @@
+# What is wrong: .fabric connection edge line uses '=>' instead of '->'. Error displayed: error[ERR014]: Syntax error: Invalid connection edge. Expected format 'Entity.Path -> Entity.Path : "Label"'.
+system "System"
+
+Feature.Auth => Component.Auth : "Triggers"

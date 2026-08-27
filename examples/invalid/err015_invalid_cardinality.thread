@@ -1,0 +1,11 @@
+# What is wrong: Database relation specifies unsupported cardinality '1:*'. Error displayed: error[ERR015]: Syntax error: Invalid relation cardinality '1:*'. Expected one of '1:N', 'N:1', '1:1', 'N:M'.
+Storage AppStorage
+{
+    Table audit_logs
+    {
+        Relations
+        {
+            users.id 1:* audit_logs.user_id
+        }
+    }
+}

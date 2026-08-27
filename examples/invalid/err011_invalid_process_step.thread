@@ -1,0 +1,11 @@
+# What is wrong: Contract process step missing numeric index 'step 1: "do action"'. Error displayed: error[ERR011]: Syntax error: Invalid process step format. Expected format '1. "Description"'.
+Component AuthService
+{
+    Contract login
+    {
+        Process
+        {
+            step 1: "do action"
+        }
+    }
+}
