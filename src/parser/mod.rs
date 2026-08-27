@@ -5,6 +5,4 @@ Purpose: Parser module declarations for Loom 2.0 thread and fabric specification
 
 pub mod thread;
 pub mod fabric;
-
-pub use thread::ThreadParser;
-pub use fabric::FabricParser;
+pub mod errors;

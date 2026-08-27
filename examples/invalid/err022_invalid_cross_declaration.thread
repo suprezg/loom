@@ -1,0 +1,8 @@
+# What is wrong: Declaring a 'Model' block inside a 'Feature' entity. Error displayed: error[ERR022]: Syntax error: Invalid cross-entity declaration. Sub-block cannot be declared inside this entity domain.
+Feature Authentication
+{
+    Model InsideFeature
+    {
+        Type "Struct"
+    }
+}

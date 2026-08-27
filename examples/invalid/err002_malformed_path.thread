@@ -1,0 +1,8 @@
+# What is wrong: Decorator scoped path contains dangling colons 'AuthService::'. Error displayed: error[ERR002]: Syntax error: Malformed scoped path 'AuthService::'. Expected 'Entity' or 'Entity::Member'.
+Component AuthService
+{
+    @storage(AuthService::)
+    Contract login
+    {
+    }
+}

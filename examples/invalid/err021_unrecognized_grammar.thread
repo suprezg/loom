@@ -1,0 +1,4 @@
+# What is wrong: File contains unknown top-level keyword 'UnknownKeyword'. Error displayed: error[ERR021]: Syntax error: Unexpected token 'UnknownKeyword'. Unrecognized syntax in thread specification.
+UnknownKeyword AuthService
+{
+}

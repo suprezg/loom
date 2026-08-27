@@ -1,0 +1,2 @@
+# What is wrong: .fabric file missing mandatory 'system "Name"' header declaration. Error displayed: error[ERR019]: Syntax error: Missing system header in '.fabric'. Fabric files must begin with 'system "SystemName"'.
+import "examples/authentication.thread"

@@ -1,0 +1,4 @@
+# What is wrong: Entity reference in fabric uses unknown domain prefix 'Service.AuthService'. Error displayed: error[ERR018]: Syntax error: Unknown entity domain 'Service'. Must be one of 'Feature', 'Component', 'Storage', or 'Protocol'.
+system "System"
+
+Service.AuthService -> Component.Vault : "Calls"
