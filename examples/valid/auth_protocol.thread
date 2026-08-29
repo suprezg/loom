@@ -16,10 +16,10 @@ Protocol AuthProtocol
             autonumber
             participant AuthService as AuthService::login
             participant Bus as TokenBroadcastPipe
-            participant SessionManager as SessionManager::onTokenIssued
+            participant VaultEngine as VaultEngine::verifyManifest
 
-            AuthService->>Bus: Publish Token (AuthResult::Success)
-            Bus-->>SessionManager: Deliver Token
+            AuthService->>Bus: Publish Token (AuthService::AuthResult)
+            Bus-->>VaultEngine: Deliver Token
         ```
     ]
 
@@ -28,7 +28,7 @@ Protocol AuthProtocol
         ```mermaid
         flowchart TD
             Event([Security Event]) --> Stream[AuthProtocol::AuditStream]
-            Stream --> Logger[AuditLogger::logEvent]
+            Stream --> Logger[AppStorage::audit_logs]
         ```
     ]
 
@@ -42,8 +42,8 @@ Protocol AuthProtocol
         Pattern "AsyncBroadcast"
         Transport "tokio::sync::broadcast (Capacity: 1024)"
         Sender "AuthService::login"
-        Receiver "SessionManager::onTokenIssued"
-        Payload "AuthResult"
+        Receiver "VaultEngine::verifyManifest"
+        Payload "AuthService::AuthResult"
 
         Errors
         {
@@ -62,7 +62,7 @@ Protocol AuthProtocol
         Pattern "PointToPoint"
         Transport "IPC Queue"
         Sender "AuthService::login"
-        Receiver "AuditLogger::logEvent"
-        Payload "AuditEvent"
+        Receiver "AppStorage::audit_logs"
+        Payload "AuthService::AuditEvent"
     }
 }
