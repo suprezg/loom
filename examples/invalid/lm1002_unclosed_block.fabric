@@ -1,0 +1,2 @@
+# What is wrong: Fabric blueprint file ends before closing string quote. Error displayed: error[Parser102]: Syntax error: Unclosed block in fabric blueprint.
+system "System Architecture

@@ -1,0 +1,8 @@
+# What is wrong: Scoped path contains dangling colons 'AuthService::'. Error displayed: error[Parser003]: Syntax error: Malformed scoped path 'AuthService::'. Expected 'Entity' or 'Entity::Member'.
+Feature Authentication
+{
+    @storage(::AuthService)
+    Contract login
+    {
+    }
+}

@@ -1,0 +1,6 @@
+# What is wrong: Thread file ends unexpectedly without closing brace '}'. Error displayed: error[Parser002]: Syntax error: Unclosed block. Expected closing token '}'.
+Component AuthService
+{
+    Contract login
+    {
+}
