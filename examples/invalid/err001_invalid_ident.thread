@@ -1,4 +1,0 @@
-# What is wrong: Entity identifier starts with a digit '123Service'. Error displayed: error[ERR001]: Syntax error: Invalid identifier '123Service'. Identifiers must start with [a-zA-Z_].
-Component 123Service
-{
-}

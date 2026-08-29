@@ -1,4 +1,0 @@
-# What is wrong: Fabric import statement path is unquoted 'import specs/auth.thread'. Error displayed: error[ERR017]: Syntax error: Malformed import statement. Path must be enclosed in double quotes.
-system "System"
-
-import specs/auth.thread

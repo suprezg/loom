@@ -1,3 +1,0 @@
-# What is wrong: Missing closing brace '}' at end of entity. Error displayed: error[ERR003]: Syntax error: Unclosed block. Expected closing token '}'.
-Component UnclosedService
-{

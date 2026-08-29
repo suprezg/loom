@@ -1,8 +1,0 @@
-# What is wrong: Model Type statement includes an invalid colon 'Type: "Enum"'. Error displayed: error[ERR008]: Syntax error: Unexpected colon in Type statement. Use 'Type "Enum"' without a colon.
-Component AuthService
-{
-    Model AuthResult
-    {
-        Type: "Enum"
-    }
-}
