@@ -87,7 +87,7 @@ scenario_outline_block = {
     decorator* ~
     "Scenario Outline" ~ string_lit ~ "{" ~
     step_stmt* ~
-    examples_block ~
+    examples_block? ~
     "}"
 }
 
