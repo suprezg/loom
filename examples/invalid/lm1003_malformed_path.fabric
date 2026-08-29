@@ -1,0 +1,4 @@
+# What is wrong: Reference path contains dangling colons 'AuthService::'. Error displayed: error[Parser103]: Syntax error: Malformed path in fabric blueprint.
+system "System Architecture"
+
+Feature.AuthService:: -> Component.Vault : "Calls"

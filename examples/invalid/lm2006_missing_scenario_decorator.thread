@@ -1,0 +1,7 @@
+# What is wrong: Feature scenario missing required decorator annotation. Warning displayed: warning[LM2006]: Semantic warning: Scenario 'Unannotated Scenario' missing decorator annotation.
+Feature AuthFeature
+{
+    Scenario "Unannotated Scenario"
+    {
+    }
+}

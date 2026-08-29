@@ -1,0 +1,8 @@
+# What is wrong: Scenario references non-existent Component 'Service'. Error displayed: error[LM2001]: Semantic error: Unresolved reference 'Service::login'. Target entity or member was not found.
+Feature Authentication
+{
+    @component(Service::login)
+    Scenario "Service Login"
+    {
+    }
+}

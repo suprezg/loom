@@ -1,8 +1,0 @@
-# What is wrong: Decorator uses quoted string argument '"AuthService::login"'. Error displayed: error[ERR004]: Syntax error: Unexpected string literal in decorator. Use unquoted path '@component(AuthService::login)'.
-Component AuthService
-{
-    @component("AuthService::login")
-    Contract login
-    {
-    }
-}

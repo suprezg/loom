@@ -1,0 +1,8 @@
+# What is wrong: Duplicate Component entity declaration 'AuthService'. Error displayed: error[LM2002]: Semantic error: Duplicate entity declaration 'AuthService'. Entity was already declared.
+Component AuthService
+{
+}
+
+Component AuthService
+{
+}

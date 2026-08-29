@@ -1,4 +1,0 @@
-# What is wrong: Component entity name is enclosed in double quotes '"AuthService"'. Error displayed: error[ERR007]: Syntax error: Unexpected string literal '"AuthService"'. Entity/block names must be unquoted identifiers.
-Component "AuthService"
-{
-}

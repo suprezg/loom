@@ -5,10 +5,9 @@ COMMENT    = _{ ("#" ~ (!"\n" ~ ANY)*) | ("/*" ~ (!"*/" ~ ANY)* ~ "*/") }
 // Fabric File Grammar
 // ==========================================
 
-fabric_file = { SOI ~ system_decl ~ import_stmt* ~ fabric_body_item* ~ EOI }
+fabric_file = { SOI ~ system_decl ~ fabric_body_item* ~ EOI }
 
 system_decl = { "system" ~ string_lit }
-import_stmt = { "import" ~ string_lit }
 
 fabric_body_item = {
     group_block

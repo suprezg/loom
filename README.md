@@ -41,7 +41,7 @@ Loom solves this by introducing a dual-DSL framework. It combines a modified Ghe
 - **Component-Level Specification:** Express contracts for lower-level architectural components including runtimes, services, routing channels, and APIs.
 - **Structural Blueprint Compilation:** Uses a central configuration file (`.fabric`) to map sections, specify ordering, and compile target Markdown files.
 - **Mermaid Diagram Integration:** Automatically parses diagram declarations in specifications and wraps them into standard GitHub-flavored Mermaid code blocks for instant visual rendering.
-- **Linting & Validation:** Includes a structural validator to lint syntax rules, confirm referenced paths, and check diagram structures.
+- **Semantic Analysis & Validation:** Includes a structural validator to analyze syntax rules, confirm referenced paths, and check diagram structures.
 - **VS Code Extension:** Syntax highlighting, context-aware autocompletion for both Behavior and Component specifications and for Manifest File, and custom file icon badges.
 - **Model Context Protocol (MCP) Server:** Expose Loom's specs and manifest AST to agentic workflows and LLMs via standard MCP configurations.
 - **Loom Skills:** Pre-packaged agent workflows and specification templates to boost specification writing productivity.
@@ -49,7 +49,7 @@ Loom solves this by introducing a dual-DSL framework. It combines a modified Ghe
 ### Non-Functional
 
 - **Lightning-Fast Execution:** Built in Rust to perform parsing, extraction, and compilation in milliseconds.
-- **Textile Metaphor Coherency:** System entities are cleanly structured around intuitive textile concepts: *Loom* (compilation engine), *Fabric* (document blueprints), *Threads* (specification files), *Weave* (compilation pipeline), and *Comb* (linter).
+- **Textile Metaphor Coherency:** System entities are cleanly structured around intuitive textile concepts: *Loom* (compilation engine), *Fabric* (document blueprints), *Threads* (specification files), *Weave* (compilation pipeline), and *Comb* (semantic analyzer).
 - **Zero Runtime Dependencies for Outputs:** Emits self-contained, standards-compliant Markdown files that render perfectly on web platforms without custom readers.
 - **Type-Safe Validation:** Leverages Rust's type system to ensure safe parallel processing and correct AST mapping.
 

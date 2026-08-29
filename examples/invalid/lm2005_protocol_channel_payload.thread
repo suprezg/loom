@@ -1,0 +1,13 @@
+# What is wrong: Channel payload references invalid target 'MissingPayload'. Error displayed: error[LM2005]: Semantic error: Channel target 'MissingPayload' does not match any known entity or member.
+Protocol AuthProtocol
+{
+    Channel LoginChannel
+    {
+        Sender "AuthService"
+        Receiver "User"
+        Payload "MissingPayload"
+    }
+}
+
+Component AuthService {}
+Component User {}
