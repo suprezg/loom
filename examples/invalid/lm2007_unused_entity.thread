@@ -1,0 +1,4 @@
+# What is wrong: Component 'UnusedComponent' is declared but never referenced in any feature scenario. Warning displayed: warning[LM2007]: Semantic warning: Unused entity 'UnusedComponent'. Entity is declared but never referenced.
+Component UnusedComponent
+{
+}

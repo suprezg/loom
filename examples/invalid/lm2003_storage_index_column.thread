@@ -1,0 +1,18 @@
+# What is wrong: Storage index references non-existent column 'missing_col'. Error displayed: error[LM2003]: Semantic error: Storage index column 'missing_col' not found in table 'users'.
+Storage AppDatabase
+{
+    Engine "PostgreSQL"
+
+    Table users
+    {
+        Fields
+        {
+            "id": "UUID"
+        }
+
+        Indexes
+        {
+            Idx (missing_col)
+        }
+    }
+}

@@ -1,0 +1,7 @@
+# What is wrong: Blueprint references non-existent thread entity 'Component.NonExistentEntity'. Error displayed: error[LM3001]: Semantic error: Unresolved fabric reference 'Component.NonExistentEntity'. Target thread entity was not found.
+system "TestSystem"
+
+group "MainGroup"
+{
+    Component.NonExistentEntity
+}
