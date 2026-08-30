@@ -1,16 +1,16 @@
 Component AuthService
 {
-    !Note [
+    !Note [[
         Core authentication service managing user identity validation, credential checks,
         and session token generation across the application lifetime.
-    ]
+    ]]
 
-    !Note [
+    !Note [[
         Integrates with VaultEngine to verify developer binary manifests during login operations.
-    ]
+    ]]
 
     !Diagram LoginFlow
-    [
+    [[
         ```mermaid
         flowchart TD
             Start([Start login]) --> FetchHash[Fetch password hash from AppStorage::users]
@@ -20,7 +20,7 @@ Component AuthService
             CallVault --> EmitToken[Broadcast token to AuthProtocol::TokenBroadcastPipe]
             EmitToken --> ReturnSuccess[Return AuthResult::Success]
         ```
-    ]
+    ]]
 
     Invariants
     {
@@ -107,13 +107,13 @@ Component AuthService
 
 Component VaultEngine
 {
-    !Note [
+    !Note [[
         ACL Vault engine responsible for verifying manifest signatures, validating plugin bundles,
         and isolating sandbox execution permissions across the application lifetime.
-    ]
+    ]]
 
     !Diagram VerifyProcess
-    [
+    [[
         ```mermaid
         flowchart TD
             Start([Start verifyManifest]) --> Read[Read raw bytes from disk]
@@ -123,7 +123,7 @@ Component VaultEngine
             VerifySig -- Failed --> InvalidSig[Return InvalidSignature Error]
             VerifySig -- Valid --> ReturnValid[Return ManifestStatus::Valid]
         ```
-    ]
+    ]]
 
     Invariants
     {

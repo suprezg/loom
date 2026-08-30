@@ -1,0 +1,34 @@
+{
+  "$Fabric.System": {
+    "prefix": "$Fabric.System",
+    "body": [
+      "system \"${1:SystemName}\"",
+      "",
+      "group \"${2:MainGroup}\"",
+      "{",
+      "    Feature.${3:AuthFeature}",
+      "    Component.${4:AuthService}",
+      "}",
+      "",
+      "Feature.${3:AuthFeature} -> Component.${4:AuthService} : \"${5:Triggers}\""
+    ],
+    "description": "Boilerplate for a Loom Fabric System Blueprint"
+  },
+  "$Group": {
+    "prefix": "$Group",
+    "body": [
+      "group \"${1:GroupName}\"",
+      "{",
+      "    ${2:EntityType}.${4:EntityName}",
+      "}"
+    ],
+    "description": "Boilerplate for a Group block in Fabric"
+  },
+  "$Connection": {
+    "prefix": "$Connection",
+    "body": [
+      "${1:Feature}.${2:SourceEntity} -> ${3:Component}.${4:TargetEntity} : \"${5:Label}\""
+    ],
+    "description": "Boilerplate for entity connection in Fabric with editable domain kinds"
+  }
+}

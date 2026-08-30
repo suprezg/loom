@@ -1,18 +1,18 @@
 Storage AppStorage
 {
-    !Note [
+    !Note [[
         Local encrypted storage engine for persistent application metadata, user account credentials,
         and security compliance audit logs.
-    ]
+    ]]
 
     !Diagram SchemaERD
-    [
+    [[
         ```mermaid
         erDiagram
             users ||--o{ audit_logs : generates
             users ||--o{ plugins : installs
         ```
-    ]
+    ]]
 
     Engine "SQLite3 / SQLCipher"
 

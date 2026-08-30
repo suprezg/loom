@@ -1,0 +1,133 @@
+{
+  "$Thread.Feature": {
+    "prefix": "$Thread.Feature",
+    "body": [
+      "Feature ${1:FeatureName}",
+      "{",
+      "    !Note [[ ${2:Feature description} ]]",
+      "",
+      "    Scenario \"${3:Scenario Name}\"",
+      "    {",
+      "        Given \"${4:initial state}\"",
+      "        When \"${5:action performed}\"",
+      "        Then \"${6:expected outcome}\"",
+      "    }",
+      "}"
+    ],
+    "description": "Boilerplate for a Loom Thread Feature Entity"
+  },
+  "$Thread.Component": {
+    "prefix": "$Thread.Component",
+    "body": [
+      "Component ${1:ComponentName}",
+      "{",
+      "    !Note [[ ${2:Component description} ]]",
+      "",
+      "    Invariants",
+      "    {",
+      "        \"${3:Invariant rule}\"",
+      "    }",
+      "",
+      "    Model ${4:ModelName}",
+      "    {",
+      "        Type \"${5:Struct}\"",
+      "        Members",
+      "        {",
+      "            \"${6:fieldName}\": \"${7:String}\"",
+      "        }",
+      "    }",
+      "",
+      "    Contract ${8:contractName}",
+      "    {",
+      "        Signature \"${9:signature}\" -> \"${10:ReturnType}\"",
+      "        Requires \"${11:Precondition}\"",
+      "        Ensures \"${12:Postcondition}\"",
+      "        Process",
+      "        {",
+      "            1. \"${13:Step 1}\"",
+      "        }",
+      "    }",
+      "}"
+    ],
+    "description": "Boilerplate for a Loom Thread Component Entity"
+  },
+  "$Thread.Storage": {
+    "prefix": "$Thread.Storage",
+    "body": [
+      "Storage ${1:StorageName}",
+      "{",
+      "    !Note [[ ${2:Database storage schema} ]]",
+      "",
+      "    Engine \"${3:PostgreSQL}\"",
+      "",
+      "    Table ${4:tableName}",
+      "    {",
+      "        Fields",
+      "        {",
+      "            \"${5:id}\": \"${6:UUID}\"",
+      "        }",
+      "",
+      "        Indexes",
+      "        {",
+      "            ${7:IdxName} (${8:id})",
+      "        }",
+      "    }",
+      "}"
+    ],
+    "description": "Boilerplate for a Loom Thread Storage Entity"
+  },
+  "$Thread.Protocol": {
+    "prefix": "$Thread.Protocol",
+    "body": [
+      "Protocol ${1:ProtocolName}",
+      "{",
+      "    !Note [[ ${2:Protocol channel specification} ]]",
+      "",
+      "    Channel ${3:ChannelName}",
+      "    {",
+      "        Pattern \"${4:Publish-Subscribe}\"",
+      "        Transport \"${5:gRPC}\"",
+      "        Sender \"${6:SenderComponent}\"",
+      "        Receiver \"${7:ReceiverComponent}\"",
+      "        Payload \"${8:PayloadModel}\"",
+      "    }",
+      "}"
+    ],
+    "description": "Boilerplate for a Loom Thread Protocol Entity"
+  },
+  "$decoratorF": {
+    "prefix": "$decoratorF",
+    "body": [
+      "@feature(${1:FeatureEntity::Scenario})"
+    ],
+    "description": "Feature Decorator Snippet"
+  },
+  "$decoratorC": {
+    "prefix": "$decoratorC",
+    "body": [
+      "@component(${1:ComponentEntity::Member})"
+    ],
+    "description": "Component Decorator Snippet"
+  },
+  "$decoratorS": {
+    "prefix": "$decoratorS",
+    "body": [
+      "@storage(${1:StorageEntity::Table})"
+    ],
+    "description": "Storage Decorator Snippet"
+  },
+  "$decoratorP": {
+    "prefix": "$decoratorP",
+    "body": [
+      "@protocol(${1:ProtocolEntity::Channel})"
+    ],
+    "description": "Protocol Decorator Snippet"
+  },
+  "$decoratorD": {
+    "prefix": "$decoratorD",
+    "body": [
+      "@diagram(${1:DiagramName})"
+    ],
+    "description": "Diagram Decorator Snippet"
+  }
+}

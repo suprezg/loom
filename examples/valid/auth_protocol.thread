@@ -1,16 +1,16 @@
 Protocol AuthProtocol
 {
-    !Note [
+    !Note [[
         Defines inter-component communication channels for authentication events,
         token broadcasting, and security audit streaming.
-    ]
+    ]]
 
-    !Note [
+    !Note [[
         Enforces strict encryption and buffer capacity bounds across all security streams.
-    ]
+    ]]
 
     !Diagram TokenStreamFlow
-    [
+    [[
         ```mermaid
         sequenceDiagram
             autonumber
@@ -21,16 +21,16 @@ Protocol AuthProtocol
             AuthService->>Bus: Publish Token (AuthService::AuthResult)
             Bus-->>VaultEngine: Deliver Token
         ```
-    ]
+    ]]
 
     !Diagram AuditFlow
-    [
+    [[
         ```mermaid
         flowchart TD
             Event([Security Event]) --> Stream[AuthProtocol::AuditStream]
             Stream --> Logger[AppStorage::audit_logs]
         ```
-    ]
+    ]]
 
     @feature(Authentication)
     @component(AuthService::login)

@@ -1,17 +1,17 @@
 Feature Authentication
 {
-    !Note [
+    !Note [[
         Governs user identity verification, session creation, and security compliance.
         This feature enforces OAuth2 tokens and strict password complexity rules.
-    ]
+    ]]
 
-    !Note [
+    !Note [[
         All authentication events are audited and logged to the central security stream
         to ensure compliance with enterprise threat monitoring standards.
-    ]
+    ]]
 
     !Diagram SequenceLogin
-    [
+    [[
         ```mermaid
         sequenceDiagram
             autonumber
@@ -29,10 +29,10 @@ Feature Authentication
             AuthService-->>-LoginUI: AuthResult::Success
             LoginUI-->>User: Displays success toast and redirects to dashboard
         ```
-    ]
+    ]]
 
     !Diagram StateLogin
-    [
+    [[
         ```mermaid
         stateDiagram-v2
             [*] --> LoggedOut
@@ -41,7 +41,7 @@ Feature Authentication
             Authenticating --> LoggedOut : AuthResult::InvalidCredentials
             LoggedIn --> LoggedOut : ClickLogout
         ```
-    ]
+    ]]
 
     Background
     {
