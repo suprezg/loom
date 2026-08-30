@@ -1,0 +1,154 @@
+{
+  "name": "loom-vscode",
+  "displayName": "Loom",
+  "description": "Syntax highlighting, icons, boilerplates, and context-aware autocompletion for Loom (.fabric and .thread) files.",
+  "version": "1.0.0",
+  "publisher": "loom",
+  "icon": "./assets/icon.png",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "loom-fabric",
+        "aliases": [
+          "Loom Fabric",
+          "fabric"
+        ],
+        "extensions": [
+          ".fabric"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./assets/fabric.svg",
+          "dark": "./assets/fabric.svg"
+        }
+      },
+      {
+        "id": "loom-thread",
+        "aliases": [
+          "Loom Thread",
+          "thread"
+        ],
+        "extensions": [
+          ".thread"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./assets/thread.svg",
+          "dark": "./assets/thread.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "loom-fabric",
+        "scopeName": "source.loom.fabric",
+        "path": "./syntaxes/fabric.tmLanguage.json"
+      },
+      {
+        "language": "loom-thread",
+        "scopeName": "source.loom.thread",
+        "path": "./syntaxes/thread.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "loom-thread",
+        "path": "./snippets/thread.code-snippets"
+      },
+      {
+        "language": "loom-fabric",
+        "path": "./snippets/fabric.code-snippets"
+      }
+    ],
+    "configurationDefaults": {
+      "editor.tokenColorCustomizations": {
+        "textMateRules": [
+          {
+            "scope": [
+              "meta.bracket.block.loom comment.block.documentation.loom"
+            ],
+            "settings": {
+              "foreground": "#7c7f93"
+            }
+          },
+          {
+            "scope": "comment.line.number-sign.loom",
+            "settings": {
+              "foreground": "#a6e3a1"
+            }
+          },
+          {
+            "scope": "comment.block.loom",
+            "settings": {
+              "foreground": "#a6e3a1"
+            }
+          },
+          {
+            "scope": "keyword.control.directive.loom",
+            "settings": {
+              "foreground": "#f38ba8"
+            }
+          },
+          {
+            "scope": "entity.name.function.decorator.loom",
+            "settings": {
+              "foreground": "#fab387"
+            }
+          },
+          {
+            "scope": "string.quoted.double.loom",
+            "settings": {
+              "foreground": "#f9e2af"
+            }
+          },
+          {
+            "scope": "keyword.control.class.loom",
+            "settings": {
+              "foreground": "#7287fd"
+            }
+          },
+          {
+            "scope": "storage.type.loom",
+            "settings": {
+              "foreground": "#89b4fa"
+            }
+          },
+          {
+            "scope": "variable.language.loom",
+            "settings": {
+              "foreground": "#94e2d5"
+            }
+          },
+          {
+            "scope": "keyword.other.language.loom",
+            "settings": {
+              "foreground": "#f5e0dc"
+            }
+          },
+          {
+            "scope": "keyword.operator.assignment.loom",
+            "settings": {
+              "foreground": "#89dceb"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "tsc -p ./",
+    "compile": "tsc -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.75.0",
+    "typescript": "^5.0.0"
+  }
+}

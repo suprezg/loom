@@ -1,0 +1,39 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Loom Fabric",
+  "scopeName": "source.loom.fabric",
+  "patterns": [
+    {
+      "name": "comment.line.number-sign.loom",
+      "match": "#.*$"
+    },
+    {
+      "name": "comment.block.loom",
+      "begin": "/\\*",
+      "end": "\\*/"
+    },
+    {
+      "name": "keyword.control.class.loom",
+      "match": "\\b(system|group)\\b"
+    },
+    {
+      "name": "storage.type.loom",
+      "match": "\\b(Feature|Component|Storage|Protocol)\\b(?=\\.)"
+    },
+    {
+      "name": "keyword.operator.assignment.loom",
+      "match": "->|:"
+    },
+    {
+      "name": "string.quoted.double.loom",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.loom",
+          "match": "\\\\."
+        }
+      ]
+    }
+  ]
+}

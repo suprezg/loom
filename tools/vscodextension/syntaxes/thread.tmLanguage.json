@@ -1,0 +1,84 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Loom Thread",
+  "scopeName": "source.loom.thread",
+  "patterns": [
+    {
+      "name": "comment.line.number-sign.loom",
+      "match": "#.*$"
+    },
+    {
+      "name": "comment.block.loom",
+      "begin": "/\\*",
+      "end": "\\*/"
+    },
+    {
+      "name": "keyword.control.directive.loom",
+      "match": "!(Note|Diagram)\\b"
+    },
+    {
+      "name": "meta.bracket.block.loom",
+      "begin": "\\[\\[",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.block.begin.loom" }
+      },
+      "end": "\\]\\]",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.block.end.loom" }
+      },
+      "contentName": "comment.block.documentation.loom",
+      "patterns": [
+        {
+          "name": "string.quoted.double.loom",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.loom",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "entity.name.function.decorator.loom",
+      "match": "@(feature|component|storage|protocol|diagram)\\b"
+    },
+    {
+      "name": "keyword.control.class.loom",
+      "match": "\\b(Feature|Component|Storage|Protocol)\\b"
+    },
+    {
+      "name": "storage.type.loom",
+      "match": "\\b(Background|Rule|Invariants|Model|Contract|Table|Channel)\\b"
+    },
+    {
+      "name": "variable.language.loom",
+      "match": "\\b(Type|Members|Signature|Requires|Ensures|Engine|Pattern|Transport|Sender|Receiver|Payload|Precondition|Postcondition|Process|Errors|Fields|Indexes|Relations|Scenario Outline|Scenario)\\b"
+    },
+    {
+      "name": "keyword.other.language.loom",
+      "match": "\\b(Given|When|Then|And|But|Examples)\\b"
+    },
+    {
+      "name": "keyword.operator.assignment.loom",
+      "match": "::|->|1:N|N:1|1:1|N:M"
+    },
+    {
+      "name": "string.quoted.double.loom",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.loom",
+          "match": "\\\\."
+        }
+      ]
+    },
+    {
+      "name": "punctuation.definition.list.loom",
+      "match": "\\b\\d+\\.\\b"
+    }
+  ]
+}
