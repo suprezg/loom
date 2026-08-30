@@ -23,10 +23,10 @@ esc_char     = _{ "\\" ~ ANY }
 ident        = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-")* }
 scoped_path  = @{ ident ~ ("::" ~ ident)* }
 
-note_block   = { "!Note" ~ "[" ~ note_content ~ "]" }
-note_content = @{ (!"]" ~ ANY)* }
+note_block   = { "!Note" ~ "[[" ~ note_content ~ "]]" }
+note_content = @{ (!"]]" ~ ANY)* }
 
-diagram_block   = { "!Diagram" ~ ident ~ "[" ~ "```mermaid" ~ diagram_content ~ "```" ~ "]" }
+diagram_block   = { "!Diagram" ~ ident ~ "[[" ~ "```mermaid" ~ diagram_content ~ "```" ~ "]]" }
 diagram_content = @{ (!"```" ~ ANY)* }
 
 // Decorators (Universal 4-Entity Connectors using unquoted scoped_path)
