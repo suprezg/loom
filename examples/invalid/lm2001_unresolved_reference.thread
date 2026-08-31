@@ -2,7 +2,8 @@
 Feature Authentication
 {
     @component(Service::login)
-    Scenario "Service Login"
+    Scenario ServiceLogin
     {
+        Title "Service Login"
     }
 }
