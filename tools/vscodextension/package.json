@@ -128,9 +128,9 @@
             }
           },
           {
-            "scope": "keyword.other.language.loom",
+            "scope": "variable.language.special.loom",
             "settings": {
-              "foreground": "#f5e0dc"
+              "foreground": "#e64553"
             }
           },
           {
