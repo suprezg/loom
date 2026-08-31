@@ -31,6 +31,18 @@ struct ReferenceSymbol
     span: SpanInfo,
 }
 
+fn isDecoratorRule(rule: ThreadRule) -> bool {
+    matches!(
+        rule,
+        ThreadRule::decorator
+        | ThreadRule::component_decorator
+        | ThreadRule::storage_decorator
+        | ThreadRule::protocol_decorator
+        | ThreadRule::feature_decorator
+        | ThreadRule::diagram_decorator
+    )
+}
+
 /*
 Structure representing an extracted database relation statement to validate.
 */
@@ -118,12 +130,25 @@ fn traverseThreadNode(
                 }
             }
         }
-        ThreadRule::model_block | ThreadRule::contract_block | ThreadRule::channel_block => {
+        ThreadRule::model_block
+        | ThreadRule::contract_block
+        | ThreadRule::channel_block
+        | ThreadRule::scenario_block
+        | ThreadRule::scenario_outline_block => {
+            let isScenario = pair.as_rule() == ThreadRule::scenario_block || pair.as_rule() == ThreadRule::scenario_outline_block;
+            let mut hasDecorator = false;
+            let mut scenarioName = String::from("Scenario");
+
             for child in pair.clone().into_inner() {
-                if child.as_rule() == ThreadRule::ident {
+                let r = child.as_rule();
+                if r == ThreadRule::ident {
                     let mName = child.as_str().to_string();
                     let span = child.as_span();
                     let spanInfo = SpanInfo { start: span.start(), length: span.end() - span.start() };
+
+                    if isScenario {
+                        scenarioName = mName.clone();
+                    }
 
                     if let Some(eName) = currentEntity {
                         let scoped = format!("{}::{}", eName, mName);
@@ -145,8 +170,28 @@ fn traverseThreadNode(
                         }
                         memberNames.insert(scoped, spanInfo);
                     }
-                    break;
+                } else if isDecoratorRule(r) {
+                    hasDecorator = true;
                 }
+            }
+
+            /* LM2006: Feature Scenario / Scenario Outline Missing Decorator Verification */
+            if isScenario && !hasDecorator {
+                let span = pair.as_span();
+                let spanInfo = SpanInfo { start: span.start(), length: span.end() - span.start() };
+                let (tPath, tContent, lStart) = resolveSpan(fileMap, spanInfo.start);
+                let diag = LoomDiagnostic::new(
+                    tPath,
+                    tContent.to_string(),
+                    lStart,
+                    spanInfo.length,
+                    format!("Scenario '{}' missing decorator annotation", scenarioName),
+                    Some("Add a @component, @storage, @protocol, or @feature decorator above the scenario".to_string()),
+                    "LM2006".to_string(),
+                    format!("Semantic warning: Scenario '{}' missing decorator annotation.", scenarioName),
+                    miette::Severity::Warning,
+                );
+                warnings.push(diag.toReport());
             }
         }
         ThreadRule::table_block => {
@@ -302,44 +347,6 @@ fn traverseThreadNode(
                 if decStr.starts_with("@diagram") {
                     diagramReferences.insert(target);
                 }
-            }
-        }
-        ThreadRule::scenario_block | ThreadRule::scenario_outline_block => {
-            let span = pair.as_span();
-            let spanInfo = SpanInfo { start: span.start(), length: span.end() - span.start() };
-            let mut hasDecorator = false;
-            let mut scenarioName = String::from("Scenario");
-
-            for child in pair.clone().into_inner() {
-                let r = child.as_rule();
-                if r == ThreadRule::decorator
-                    || r == ThreadRule::component_decorator
-                    || r == ThreadRule::storage_decorator
-                    || r == ThreadRule::protocol_decorator
-                    || r == ThreadRule::feature_decorator
-                    || r == ThreadRule::diagram_decorator
-                {
-                    hasDecorator = true;
-                } else if r == ThreadRule::string_lit {
-                    scenarioName = child.as_str().trim_matches('"').to_string();
-                }
-            }
-
-            /* LM2006: Feature Scenario / Scenario Outline Missing Decorator Verification */
-            if !hasDecorator {
-                let (tPath, tContent, lStart) = resolveSpan(fileMap, spanInfo.start);
-                let diag = LoomDiagnostic::new(
-                    tPath,
-                    tContent.to_string(),
-                    lStart,
-                    spanInfo.length,
-                    format!("Scenario '{}' missing decorator annotation", scenarioName),
-                    Some("Add a @component, @storage, @protocol, or @feature decorator above the scenario".to_string()),
-                    "LM2006".to_string(),
-                    format!("Semantic warning: Scenario '{}' missing decorator annotation.", scenarioName),
-                    miette::Severity::Warning,
-                );
-                warnings.push(diag.toReport());
             }
         }
         ThreadRule::diagram_block => {
@@ -620,7 +627,9 @@ fn collectThreadSymbols(
         ThreadRule::model_block
         | ThreadRule::contract_block
         | ThreadRule::table_block
-        | ThreadRule::channel_block => {
+        | ThreadRule::channel_block
+        | ThreadRule::scenario_block
+        | ThreadRule::scenario_outline_block => {
             for child in pair.clone().into_inner() {
                 if child.as_rule() == ThreadRule::ident {
                     let mName = child.as_str().to_string();

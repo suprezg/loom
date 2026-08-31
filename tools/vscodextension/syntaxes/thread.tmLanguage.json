@@ -51,15 +51,11 @@
     },
     {
       "name": "storage.type.loom",
-      "match": "\\b(Background|Rule|Invariants|Model|Contract|Table|Channel)\\b"
+      "match": "\\b(Background|Rule|Invariants|Model|Contract|Table|Channel|Scenario Outline|Scenario)\\b"
     },
     {
       "name": "variable.language.loom",
-      "match": "\\b(Type|Members|Signature|Requires|Ensures|Engine|Pattern|Transport|Sender|Receiver|Payload|Precondition|Postcondition|Process|Errors|Fields|Indexes|Relations|Scenario Outline|Scenario)\\b"
-    },
-    {
-      "name": "keyword.other.language.loom",
-      "match": "\\b(Given|When|Then|And|But|Examples)\\b"
+      "match": "\\b(Type|Members|Signature|Requires|Ensures|Engine|Pattern|Transport|Sender|Receiver|Payload|Precondition|Postcondition|Process|Errors|Fields|Indexes|Relations|Title|Given|When|Then|And|But|Examples)\\b"
     },
     {
       "name": "keyword.operator.assignment.loom",

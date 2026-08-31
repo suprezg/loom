@@ -47,6 +47,7 @@ Structure representing a scenario or scenario outline in a feature.
 struct ScenarioDto
 {
     name: String,
+    title: Option<String>,
     isOutline: bool,
     decorators: Vec<DecoratorDto>,
     steps: Vec<StepDto>,
@@ -481,6 +482,7 @@ fn extractScenario(pair: &pest::iterators::Pair<'_, ThreadRule>) -> ScenarioDto
 {
     let isOutline = pair.as_rule() == ThreadRule::scenario_outline_block;
     let mut sName = String::new();
+    let mut sTitle: Option<String> = None;
     let mut decorators = Vec::new();
     let mut steps = Vec::new();
     let mut examples = Vec::new();
@@ -490,9 +492,16 @@ fn extractScenario(pair: &pest::iterators::Pair<'_, ThreadRule>) -> ScenarioDto
             decorators.push(extractDecorator(&child));
         } else {
             match child.as_rule() {
-                ThreadRule::string_lit => {
+                ThreadRule::ident => {
                     if sName.is_empty() {
-                        sName = child.as_str().trim_matches('"').to_string();
+                        sName = child.as_str().to_string();
+                    }
+                }
+                ThreadRule::title_stmt => {
+                    for tChild in child.into_inner() {
+                        if tChild.as_rule() == ThreadRule::string_lit {
+                            sTitle = Some(tChild.as_str().trim_matches('"').to_string());
+                        }
                     }
                 }
                 ThreadRule::step_stmt => {
@@ -510,7 +519,7 @@ fn extractScenario(pair: &pest::iterators::Pair<'_, ThreadRule>) -> ScenarioDto
         }
     }
 
-    ScenarioDto { name: sName, isOutline, decorators, steps, examples }
+    ScenarioDto { name: sName, title: sTitle, isOutline, decorators, steps, examples }
 }
 
 fn extractStep(pair: &pest::iterators::Pair<'_, ThreadRule>) -> StepDto

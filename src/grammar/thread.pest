@@ -78,18 +78,22 @@ rule_block = {
 
 scenario_block = {
     decorator* ~
-    "Scenario" ~ string_lit ~ "{" ~
+    "Scenario" ~ ident ~ "{" ~
+    title_stmt? ~
     step_stmt* ~
     "}"
 }
 
 scenario_outline_block = {
     decorator* ~
-    "Scenario Outline" ~ string_lit ~ "{" ~
+    "Scenario Outline" ~ ident ~ "{" ~
+    title_stmt? ~
     step_stmt* ~
     examples_block? ~
     "}"
 }
+
+title_stmt = { "Title" ~ string_lit }
 
 step_stmt = { step_kw ~ string_lit }
 step_kw   = { "Given" | "When" | "Then" | "And" | "But" }

@@ -159,6 +159,7 @@ export function activate(context: vscode.ExtensionContext) {
         // Inside Feature Entity Context
         if (ctx.entityType === 'Feature') {
           if (ctx.subBlock === 'Scenario' || ctx.subBlock === 'Scenario Outline' || ctx.subBlock === 'Background') {
+            addKeyword('Title', new vscode.SnippetString('Title "${1:Scenario title}"'), 'Scenario Title Statement');
             addKeyword('Given', new vscode.SnippetString('Given "${1:initial state}"'), 'Behavioral Given Step');
             addKeyword('When', new vscode.SnippetString('When "${1:action performed}"'), 'Behavioral When Step');
             addKeyword('Then', new vscode.SnippetString('Then "${1:expected outcome}"'), 'Behavioral Then Step');
@@ -169,15 +170,15 @@ export function activate(context: vscode.ExtensionContext) {
             }
             addBlocks();
           } else if (ctx.subBlock === 'Rule') {
-            addSnippet('Scenario', 'Scenario "${1:Scenario Name}"\n{\n    Given "${2:initial state}"\n    When "${3:action}"\n    Then "${4:expected result}"\n}', 'Scenario Block');
-            addSnippet('Scenario Outline', 'Scenario Outline "${1:Outline Name}"\n{\n    Given "${2:step with <param>}"\n    When "${3:action}"\n    Then "${4:result}"\n\n    Examples\n    {\n        | "${5:param}" |\n        | "${6:val}"   |\n    }\n}', 'Scenario Outline Block');
+            addSnippet('Scenario', 'Scenario ${1:ScenarioName}\n{\n    Title "${2:Scenario Title}"\n\n    Given "${3:initial state}"\n    When "${4:action}"\n    Then "${5:expected result}"\n}', 'Scenario Member Block');
+            addSnippet('Scenario Outline', 'Scenario Outline ${1:OutlineName}\n{\n    Title "${2:Outline Title}"\n\n    Given "${3:step with <param>}"\n    When "${4:action}"\n    Then "${5:result}"\n\n    Examples\n    {\n        | "${6:param}" |\n        | "${7:val}"   |\n    }\n}', 'Scenario Outline Member Block');
             addBlocks();
           } else {
             // Feature Root Level
             addSnippet('Background', 'Background\n{\n    Given "${1:initial state}"\n}', 'Background Block');
-            addSnippet('Rule', 'Rule "${1:Rule Description}"\n{\n    Scenario "${2:Scenario Name}"\n    {\n        Given "${3:condition}"\n        When "${4:action}"\n        Then "${5:result}"\n    }\n}', 'Rule Block');
-            addSnippet('Scenario', 'Scenario "${1:Scenario Name}"\n{\n    Given "${2:initial state}"\n    When "${3:action}"\n    Then "${4:expected result}"\n}', 'Scenario Block');
-            addSnippet('Scenario Outline', 'Scenario Outline "${1:Outline Name}"\n{\n    Given "${2:step with <param>}"\n    When "${3:action}"\n    Then "${4:result}"\n\n    Examples\n    {\n        | "${5:param}" |\n        | "${6:val}"   |\n    }\n}', 'Scenario Outline Block');
+            addSnippet('Rule', 'Rule "${1:Rule Description}"\n{\n    Scenario ${2:ScenarioName}\n    {\n        Title "${3:Scenario Title}"\n        Given "${4:condition}"\n        When "${5:action}"\n        Then "${6:result}"\n    }\n}', 'Rule Block');
+            addSnippet('Scenario', 'Scenario ${1:ScenarioName}\n{\n    Title "${2:Scenario Title}"\n\n    Given "${3:initial state}"\n    When "${4:action}"\n    Then "${5:expected result}"\n}', 'Scenario Member Block');
+            addSnippet('Scenario Outline', 'Scenario Outline ${1:OutlineName}\n{\n    Title "${2:Outline Title}"\n\n    Given "${3:step with <param>}"\n    When "${4:action}"\n    Then "${5:result}"\n\n    Examples\n    {\n        | "${6:param}" |\n        | "${7:val}"   |\n    }\n}', 'Scenario Outline Member Block');
             addBlocks();
           }
           return items;

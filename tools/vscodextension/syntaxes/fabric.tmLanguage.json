@@ -13,11 +13,15 @@
       "end": "\\*/"
     },
     {
-      "name": "keyword.control.class.loom",
-      "match": "\\b(system|group)\\b"
+      "name": "variable.language.special.loom",
+      "match": "\\b(system)\\b"
     },
     {
       "name": "storage.type.loom",
+      "match": "\\b(group)\\b"
+    },
+    {
+      "name": "keyword.control.class.loom",
       "match": "\\b(Feature|Component|Storage|Protocol)\\b(?=\\.)"
     },
     {

@@ -55,24 +55,30 @@ Feature Authentication
         @component(VaultEngine::verifyManifest)
         @diagram(SequenceLogin)
         @diagram(StateLogin)
-        Scenario "Successful user login with valid credentials"
+        Scenario SuccessfulUserLogin
         {
+            Title "Successful user login with valid credentials"
+
             Given "a registered user is on the login page"
             When "the user enters valid credentials and clicks login"
             Then "the system authenticates the user and redirects to the main dashboard"
         }
 
         @component(AuthService::login)
-        Scenario "Unsuccessful user login with invalid password"
+        Scenario UnsuccessfulUserLogin
         {
+            Title "Unsuccessful user login with invalid password"
+
             Given "a registered user is on the login page"
             When "the user enters an incorrect password"
             Then "the system displays an error toast message 'Invalid credentials'"
         }
 
         @component(AuthService::login)
-        Scenario Outline "Validating login credentials against multiple user roles"
+        Scenario Outline MultiRoleLoginValidation
         {
+            Title "Validating login credentials against multiple user roles"
+
             Given "a user with username <username> and password <password>"
             When "the user submits the login form"
             Then "the authentication result should be <status>"

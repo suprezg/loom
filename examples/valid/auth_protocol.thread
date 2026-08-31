@@ -32,7 +32,7 @@ Protocol AuthProtocol
         ```
     ]]
 
-    @feature(Authentication)
+    @feature(Authentication::SuccessfulUserLogin)
     @component(AuthService::login)
     @component(AuthService::AuthResult)
     @storage(AppStorage::users)
@@ -52,7 +52,7 @@ Protocol AuthProtocol
         }
     }
 
-    @feature(Authentication)
+    @feature(Authentication::SuccessfulUserLogin)
     @component(AuthService::login)
     @component(AuthService::AuditEvent)
     @storage(AppStorage::audit_logs)
