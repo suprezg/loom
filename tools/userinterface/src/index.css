@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  html, body, #root {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  body {
+    background-color: #FCF2E5;
+    color: #2C2C2C;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  html.dark body {
+    background-color: #2C2C2C;
+    color: #FCF2E5;
+  }
+}
+
+/* React Flow Canvas Attribution Contrast Fix */
+.react-flow__attribution {
+  background: rgba(0, 0, 0, 0.85) !important;
+  color: #ffffff !important;
+  padding: 4px 10px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+.react-flow__attribution a {
+  color: #ffaa80 !important;
+  font-weight: 700 !important;
+  text-decoration: underline !important;
+}
+
+/* Focus Ring Accessibility Override */
+*:focus-visible {
+  outline: 2px solid #EC5B38 !important;
+  outline-offset: 2px !important;
+}
+
+/* Suppress unwanted mermaid error bomb elements */
+#d, #dmermaid, body > svg[id^="d"] {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Sigma.js dark theme hover label contrast fixes */
+html.dark .sigma-hover-node {
+  color: #FCF2E5 !important;
+  background-color: #222222 !important;
+  border-color: #EC5B38 !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+@keyframes pulseHighlight {
+  0%, 100% {
+    border-color: transparent;
+    box-shadow: 0 0 0 0 rgba(236, 91, 56, 0);
+  }
+  25%, 75% {
+    border-color: #EC5B38;
+    box-shadow: 0 0 0 4px rgba(236, 91, 56, 0.4);
+  }
+}
+
+.animate-pulse-highlight {
+  animation: pulseHighlight 1s ease-in-out 3;
+}
