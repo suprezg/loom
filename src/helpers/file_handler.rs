@@ -8,6 +8,7 @@ Purpose: Implementation of the FileHandler helper component providing file inges
 use std::fs;
 use std::path::Path;
 use crate::helpers::path_resolver::{resolvePath, getParentDir};
+use crate::helpers::diagnostics::{logMessage, LoomMessage};
 
 /*
 Structure representing a file's byte span location mapping within a concatenated source payload.
@@ -62,42 +63,57 @@ pub fn resolveSpan<'a>(
 }
 
 /*
-Enumeration of file ingestion errors.
-*/
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum IngestError
-{
-    PermissionDenied,
-    InvalidUtf8,
-    IoError,
-}
-
-/*
 Reads raw text content from a file given its path string.
 
 Takes:
 	path (&str): The file path string to read.
 
 Gives:
-	Result<String, IngestError>: Ok containing raw file text content string or IngestError.
+	Result<String, String>: Ok containing raw file text content string or Error string.
 */
-fn readFile(path: &str) -> Result<String, IngestError>
+fn readFile(path: &str) -> Result<String, String>
 {
+    logMessage(&LoomMessage::new(
+        format!("Reading raw file content from path '{}'", path),
+        miette::Severity::Advice,
+    ));
+
     if path.is_empty() {
-        return Err(IngestError::IoError);
+        let err = String::from("File read failed: Target path string is empty");
+        logMessage(&LoomMessage::new(&err, miette::Severity::Error));
+        return Err(err);
     }
+
     match fs::read(path) {
         Ok(bytes) => {
+            logMessage(&LoomMessage::new(
+                format!("Read {} bytes from file '{}'", bytes.len(), path),
+                miette::Severity::Advice,
+            ));
             match String::from_utf8(bytes) {
-                Ok(content) => Ok(content),
-                Err(_) => Err(IngestError::InvalidUtf8),
+                Ok(content) => {
+                    logMessage(&LoomMessage::new(
+                        format!("Successfully decoded UTF-8 string content for '{}'", path),
+                        miette::Severity::Advice,
+                    ));
+                    Ok(content)
+                }
+                Err(err) => {
+                    let errMsg = format!("Invalid UTF-8 encoding in file '{}': {}", path, err);
+                    logMessage(&LoomMessage::new(&errMsg, miette::Severity::Error));
+                    Err(errMsg)
+                }
             }
         }
         Err(err) => {
             if err.kind() == std::io::ErrorKind::PermissionDenied {
-                Err(IngestError::PermissionDenied)
+                let errMsg = format!("Access denied reading file '{}': Permission denied", path);
+                logMessage(&LoomMessage::new(&errMsg, miette::Severity::Error));
+                Err(errMsg)
             } else {
-                Err(IngestError::IoError)
+                let errMsg = format!("I/O error reading file '{}': {}", path, err);
+                logMessage(&LoomMessage::new(&errMsg, miette::Severity::Error));
+                Err(errMsg)
             }
         }
     }
@@ -118,14 +134,40 @@ pub fn writeFile(
     content: &str,
 ) -> Result<(), String>
 {
+    logMessage(&LoomMessage::new(
+        format!("Attempting to write {} characters to target path '{}'", content.len(), targetPath),
+        miette::Severity::Advice,
+    ));
+
     let path = Path::new(targetPath);
     if let Some(parent) = path.parent() {
         if !parent.exists() {
-            fs::create_dir_all(parent).map_err(|err| format!("Failed to create parent directory '{}': {}", parent.display(), err))?;
+            logMessage(&LoomMessage::new(
+                format!("Creating missing parent directories for target path '{}'", parent.display()),
+                miette::Severity::Advice,
+            ));
+            if let Err(err) = fs::create_dir_all(parent) {
+                let errMsg = format!("Failed to create parent directory '{}': {}", parent.display(), err);
+                logMessage(&LoomMessage::new(&errMsg, miette::Severity::Error));
+                return Err(errMsg);
+            }
         }
     }
 
-    fs::write(path, content).map_err(|err| format!("Failed to write content to file '{}': {}", targetPath, err))
+    match fs::write(path, content) {
+        Ok(_) => {
+            logMessage(&LoomMessage::new(
+                format!("Successfully wrote content to target file '{}'", targetPath),
+                miette::Severity::Advice,
+            ));
+            Ok(())
+        }
+        Err(err) => {
+            let errMsg = format!("Failed to write content to file '{}': {}", targetPath, err);
+            logMessage(&LoomMessage::new(&errMsg, miette::Severity::Error));
+            Err(errMsg)
+        }
+    }
 }
 
 /*
@@ -151,6 +193,12 @@ fn mapThreadFileEntry(
     threadContent.push_str(&content);
     threadContent.push('\n');
     let endOffset = threadContent.len();
+
+    logMessage(&LoomMessage::new(
+        format!("Mapped thread file span for '{}': byte range [{}..{}]", filePath, startOffset, endOffset),
+        miette::Severity::Advice,
+    ));
+
     threadFileMapping.push(FileSpanMapping {
         filePath: filePath.to_string(),
         content,
@@ -178,6 +226,12 @@ fn mapFabricFileEntry(
 {
     let startOffset = 0;
     let endOffset = content.len();
+
+    logMessage(&LoomMessage::new(
+        format!("Mapped fabric blueprint span for '{}': byte range [{}..{}]", filePath, startOffset, endOffset),
+        miette::Severity::Advice,
+    ));
+
     fabricFileMapping.push(FileSpanMapping {
         filePath: filePath.to_string(),
         content,
@@ -193,12 +247,19 @@ Takes:
 	path (&str): The target file or directory path string.
 
 Gives:
-	Result<IngestedPayload, IngestError>: Ok containing populated IngestedPayload struct or IngestError.
+	Result<IngestedPayload, String>: Ok containing populated IngestedPayload struct or Error string.
 */
-pub fn giveFilePayload(path: &str) -> Result<IngestedPayload, IngestError>
+pub fn giveFilePayload(path: &str) -> Result<IngestedPayload, String>
 {
+    logMessage(&LoomMessage::new(
+        format!("Starting file payload ingestion process for path '{}'", path),
+        miette::Severity::Advice,
+    ));
+
     if path.is_empty() {
-        return Err(IngestError::IoError);
+        let err = String::from("Ingestion failed: Provided path string is empty");
+        logMessage(&LoomMessage::new(&err, miette::Severity::Error));
+        return Err(err);
     }
 
     let mut payload = IngestedPayload {
@@ -212,13 +273,22 @@ pub fn giveFilePayload(path: &str) -> Result<IngestedPayload, IngestError>
 
     /* Single File Ingestion via PathResolver (getParentDir + resolvePath) using loomPath.absolute */
     if pathObj.is_file() {
-        let parentDir = getParentDir(path).map_err(|_| IngestError::IoError)?;
+        logMessage(&LoomMessage::new(
+            format!("Path '{}' identified as a single target file", path),
+            miette::Severity::Advice,
+        ));
+
+        let parentDir = getParentDir(path)?;
         let fileName = pathObj
             .file_name()
             .and_then(|n| n.to_str())
-            .ok_or(IngestError::IoError)?;
+            .ok_or_else(|| {
+                let err = format!("Failed to extract file name from path '{}'", path);
+                logMessage(&LoomMessage::new(&err, miette::Severity::Error));
+                err
+            })?;
 
-        let loomPath = resolvePath(&parentDir, fileName).map_err(|_| IngestError::IoError)?;
+        let loomPath = resolvePath(&parentDir, fileName)?;
         let content = readFile(&loomPath.absolute)?;
 
         if path.ends_with(".thread") {
@@ -227,21 +297,34 @@ pub fn giveFilePayload(path: &str) -> Result<IngestedPayload, IngestError>
             mapFabricFileEntry(&loomPath.absolute, content.clone(), &mut payload.fabricFileMapping);
             payload.fabricContent = Some(content);
         } else {
-            return Err(IngestError::IoError);
+            let err = format!("Unsupported file extension for '{}'. Only .thread and .fabric are accepted", path);
+            logMessage(&LoomMessage::new(&err, miette::Severity::Error));
+            return Err(err);
         }
+
+        logMessage(&LoomMessage::new(
+            format!("Single file ingestion completed successfully for '{}'", loomPath.absolute),
+            miette::Severity::Advice,
+        ));
 
         return Ok(payload);
     }
 
     /* Directory Ingestion via PathResolver (resolvePath per directory entry) using loomPath.absolute */
     if pathObj.is_dir() {
-        let entries = fs::read_dir(pathObj).map_err(|err| {
-            if err.kind() == std::io::ErrorKind::PermissionDenied {
-                IngestError::PermissionDenied
-            } else {
-                IngestError::IoError
+        logMessage(&LoomMessage::new(
+            format!("Path '{}' identified as a directory, scanning for specification entries", path),
+            miette::Severity::Advice,
+        ));
+
+        let entries = match fs::read_dir(pathObj) {
+            Ok(e) => e,
+            Err(err) => {
+                let errMsg = format!("Failed to read directory entries in '{}': {}", path, err);
+                logMessage(&LoomMessage::new(&errMsg, miette::Severity::Error));
+                return Err(errMsg);
             }
-        })?;
+        };
 
         for entry in entries {
             if let Ok(dirEntry) = entry {
@@ -251,25 +334,43 @@ pub fn giveFilePayload(path: &str) -> Result<IngestedPayload, IngestError>
                     let fileNameStr = fileName.to_str().unwrap_or("");
 
                     if fileNameStr.ends_with(".thread") {
+                        logMessage(&LoomMessage::new(
+                            format!("Found thread specification entry '{}' in directory", fileNameStr),
+                            miette::Severity::Advice,
+                        ));
                         if let Ok(loomPath) = resolvePath(path, fileNameStr) {
-                            let content = readFile(&loomPath.absolute)?;
-                            mapThreadFileEntry(&loomPath.absolute, content, &mut payload.threadContent, &mut payload.threadFileMapping);
+                            if let Ok(content) = readFile(&loomPath.absolute) {
+                                mapThreadFileEntry(&loomPath.absolute, content, &mut payload.threadContent, &mut payload.threadFileMapping);
+                            }
                         }
                     } else if fileNameStr.ends_with(".fabric") {
+                        logMessage(&LoomMessage::new(
+                            format!("Found fabric blueprint entry '{}' in directory", fileNameStr),
+                            miette::Severity::Advice,
+                        ));
                         if let Ok(loomPath) = resolvePath(path, fileNameStr) {
-                            let content = readFile(&loomPath.absolute)?;
-                            mapFabricFileEntry(&loomPath.absolute, content.clone(), &mut payload.fabricFileMapping);
-                            payload.fabricContent = Some(content);
+                            if let Ok(content) = readFile(&loomPath.absolute) {
+                                mapFabricFileEntry(&loomPath.absolute, content.clone(), &mut payload.fabricFileMapping);
+                                payload.fabricContent = Some(content);
+                            }
                         }
                     }
                 }
             }
         }
 
+        logMessage(&LoomMessage::new(
+            format!("Directory ingestion completed for '{}': {} thread files, {} fabric files ingested",
+                path, payload.threadFileMapping.len(), payload.fabricFileMapping.len()),
+            miette::Severity::Advice,
+        ));
+
         return Ok(payload);
     }
 
-    Err(IngestError::IoError)
+    let err = format!("Ingestion failed: Target path '{}' is neither a valid file nor directory", path);
+    logMessage(&LoomMessage::new(&err, miette::Severity::Error));
+    Err(err)
 }
 
 #[cfg(test)]
@@ -296,7 +397,7 @@ mod tests
     }
 
     /*
-    Tests readFile with a directory path (should return IngestError).
+    Tests readFile with a directory path (should return Error string).
 
     Takes:
     	None.
@@ -308,6 +409,6 @@ mod tests
     fn testReadFileWithDirectoryPath() -> ()
     {
         let result = readFile("helpers");
-        assert_eq!(result, Err(IngestError::IoError));
+        assert!(result.is_err());
     }
 }

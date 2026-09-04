@@ -5,7 +5,7 @@ Purpose: Integration tests for the FileHandler component verifying file payload 
 
 #![allow(non_snake_case)]
 
-use loom::helpers::file_handler::{giveFilePayload, IngestedPayload, IngestError};
+use loom::helpers::file_handler::{giveFilePayload, IngestedPayload};
 
 /*
 Tests giveFilePayload with a valid thread specification file returning a correct IngestedPayload struct with absolute file path mapping.
@@ -43,5 +43,5 @@ fn testGiveFilePayloadFailure() -> ()
 {
     let path = "non_existent_file.txt";
     let result = giveFilePayload(path);
-    assert_eq!(result, Err(IngestError::IoError));
+    assert!(result.is_err());
 }
