@@ -6,6 +6,7 @@ Purpose: AST document composition engine converting Thread and Fabric Pest AST p
 #![allow(non_snake_case)]
 
 use serde::{Serialize, Deserialize};
+use crate::helpers::diagnostics::{logMessage, LoomMessage};
 
 use crate::grammar::thread::Rule as ThreadRule;
 use crate::grammar::fabric::Rule as FabricRule;
@@ -259,12 +260,17 @@ Takes:
 	pairs (&pest::iterators::Pairs<'_, ThreadRule>): The root Pest AST pairs reference for a Thread file.
 
 Gives:
-	Result<String, String>: Returns pretty JSON string on success, or error string on failure.
+	Result<String, bool>: Returns pretty JSON string on success, or Err(false) with logged error message on failure.
 */
 pub fn composeThreadAst(
     pairs: &pest::iterators::Pairs<'_, ThreadRule>,
-) -> Result<String, String>
+) -> Result<String, bool>
 {
+    logMessage(&LoomMessage::new(
+        "Composing Thread AST document JSON payload...".to_string(),
+        miette::Severity::Advice,
+    ));
+
     let mut doc = ThreadDocumentDto {
         features: Vec::new(),
         components: Vec::new(),
@@ -276,7 +282,33 @@ pub fn composeThreadAst(
         traverseThreadComposerNode(&pair, &mut doc);
     }
 
-    serde_json::to_string_pretty(&doc).map_err(|err| format!("Failed to serialize thread document to JSON: {}", err))
+    logMessage(&LoomMessage::new(
+        format!(
+            "Traversed Thread AST. Extracted {} feature(s), {} component(s), {} storage(s), {} protocol(s). Serializing to JSON...",
+            doc.features.len(),
+            doc.components.len(),
+            doc.storages.len(),
+            doc.protocols.len()
+        ),
+        miette::Severity::Advice,
+    ));
+
+    match serde_json::to_string_pretty(&doc) {
+        Ok(json) => {
+            logMessage(&LoomMessage::new(
+                "Successfully composed Thread specification JSON AST document.".to_string(),
+                miette::Severity::Advice,
+            ));
+            Ok(json)
+        }
+        Err(err) => {
+            logMessage(&LoomMessage::new(
+                format!("Failed to serialize thread document to JSON: {}", err),
+                miette::Severity::Error,
+            ));
+            Err(false)
+        }
+    }
 }
 
 /*
@@ -286,12 +318,17 @@ Takes:
 	pairs (&pest::iterators::Pairs<'_, FabricRule>): The root Pest AST pairs reference for a Fabric file.
 
 Gives:
-	Result<String, String>: Returns pretty JSON string on success, or error string on failure.
+	Result<String, bool>: Returns pretty JSON string on success, or Err(false) with logged error message on failure.
 */
 pub fn composeFabricAst(
     pairs: &pest::iterators::Pairs<'_, FabricRule>,
-) -> Result<String, String>
+) -> Result<String, bool>
 {
+    logMessage(&LoomMessage::new(
+        "Composing Fabric AST document JSON payload...".to_string(),
+        miette::Severity::Advice,
+    ));
+
     let mut doc = FabricDocumentDto {
         system: String::from("Loom System Architecture"),
         groups: Vec::new(),
@@ -302,7 +339,32 @@ pub fn composeFabricAst(
         traverseFabricComposerNode(&pair, &mut doc);
     }
 
-    serde_json::to_string_pretty(&doc).map_err(|err| format!("Failed to serialize fabric document to JSON: {}", err))
+    logMessage(&LoomMessage::new(
+        format!(
+            "Traversed Fabric AST. System: '{}', {} group(s), {} connection(s). Serializing to JSON...",
+            doc.system,
+            doc.groups.len(),
+            doc.connections.len()
+        ),
+        miette::Severity::Advice,
+    ));
+
+    match serde_json::to_string_pretty(&doc) {
+        Ok(json) => {
+            logMessage(&LoomMessage::new(
+                "Successfully composed Fabric blueprint JSON AST document.".to_string(),
+                miette::Severity::Advice,
+            ));
+            Ok(json)
+        }
+        Err(err) => {
+            logMessage(&LoomMessage::new(
+                format!("Failed to serialize fabric document to JSON: {}", err),
+                miette::Severity::Error,
+            ));
+            Err(false)
+        }
+    }
 }
 
 fn traverseThreadComposerNode(
@@ -313,21 +375,37 @@ fn traverseThreadComposerNode(
     match pair.as_rule() {
         ThreadRule::feature_entity => {
             let feat = extractFeatureEntity(pair);
+            logMessage(&LoomMessage::new(
+                format!("Composed feature entity: '{}'", feat.name),
+                miette::Severity::Advice,
+            ));
             doc.features.push(feat);
             return;
         }
         ThreadRule::component_entity => {
             let comp = extractComponentEntity(pair);
+            logMessage(&LoomMessage::new(
+                format!("Composed component entity: '{}'", comp.name),
+                miette::Severity::Advice,
+            ));
             doc.components.push(comp);
             return;
         }
         ThreadRule::storage_entity => {
             let stor = extractStorageEntity(pair);
+            logMessage(&LoomMessage::new(
+                format!("Composed storage entity: '{}'", stor.name),
+                miette::Severity::Advice,
+            ));
             doc.storages.push(stor);
             return;
         }
         ThreadRule::protocol_entity => {
             let prot = extractProtocolEntity(pair);
+            logMessage(&LoomMessage::new(
+                format!("Composed protocol entity: '{}'", prot.name),
+                miette::Severity::Advice,
+            ));
             doc.protocols.push(prot);
             return;
         }
@@ -349,16 +427,28 @@ fn traverseFabricComposerNode(
             for child in pair.clone().into_inner() {
                 if child.as_rule() == FabricRule::string_lit {
                     doc.system = child.as_str().trim_matches('"').to_string();
+                    logMessage(&LoomMessage::new(
+                        format!("Composed fabric system declaration: '{}'", doc.system),
+                        miette::Severity::Advice,
+                    ));
                 }
             }
         }
         FabricRule::group_block => {
             let group = extractFabricGroup(pair);
+            logMessage(&LoomMessage::new(
+                format!("Composed fabric group: '{}'", group.name),
+                miette::Severity::Advice,
+            ));
             doc.groups.push(group);
             return;
         }
         FabricRule::connection_stmt => {
             let conn = extractFabricConnection(pair);
+            logMessage(&LoomMessage::new(
+                format!("Composed fabric connection: '{}' -> '{}'", conn.source.path, conn.target.path),
+                miette::Severity::Advice,
+            ));
             doc.connections.push(conn);
             return;
         }
@@ -475,6 +565,11 @@ fn extractFeatureEntity(pair: &pest::iterators::Pair<'_, ThreadRule>) -> Feature
         }
     }
 
+    logMessage(&LoomMessage::new(
+        format!("Extracted feature entity: '{}'", fName),
+        miette::Severity::Advice,
+    ));
+
     FeatureDto { name: fName, notes, diagrams, backgroundSteps, rules, scenarios }
 }
 
@@ -518,6 +613,11 @@ fn extractScenario(pair: &pest::iterators::Pair<'_, ThreadRule>) -> ScenarioDto
             }
         }
     }
+
+    logMessage(&LoomMessage::new(
+        format!("Extracted scenario: '{}' (outline: {}, steps: {})", sName, isOutline, steps.len()),
+        miette::Severity::Advice,
+    ));
 
     ScenarioDto { name: sName, title: sTitle, isOutline, decorators, steps, examples }
 }
@@ -585,6 +685,11 @@ fn extractComponentEntity(pair: &pest::iterators::Pair<'_, ThreadRule>) -> Compo
             _ => {}
         }
     }
+
+    logMessage(&LoomMessage::new(
+        format!("Extracted component entity: '{}'", cName),
+        miette::Severity::Advice,
+    ));
 
     ComponentDto { name: cName, notes, diagrams, invariants, contracts, models }
 }
@@ -662,6 +767,11 @@ fn extractContractEntity(pair: &pest::iterators::Pair<'_, ThreadRule>) -> Contra
         }
     }
 
+    logMessage(&LoomMessage::new(
+        format!("Extracted contract entity: '{}'", ctName),
+        miette::Severity::Advice,
+    ));
+
     ContractDto {
         name: ctName,
         decorators,
@@ -715,6 +825,11 @@ fn extractModelEntity(pair: &pest::iterators::Pair<'_, ThreadRule>) -> ModelDto
         }
     }
 
+    logMessage(&LoomMessage::new(
+        format!("Extracted model entity: '{}' (type: '{}', members: {})", mName, mType, members.len()),
+        miette::Severity::Advice,
+    ));
+
     ModelDto { name: mName, decorators, modelType: mType, members }
 }
 
@@ -748,6 +863,11 @@ fn extractStorageEntity(pair: &pest::iterators::Pair<'_, ThreadRule>) -> Storage
             _ => {}
         }
     }
+
+    logMessage(&LoomMessage::new(
+        format!("Extracted storage entity: '{}' (engine: '{}', tables: {})", sName, engine, tables.len()),
+        miette::Severity::Advice,
+    ));
 
     StorageDto { name: sName, engine, notes, diagrams, tables }
 }
@@ -828,6 +948,11 @@ fn extractTableEntity(pair: &pest::iterators::Pair<'_, ThreadRule>) -> TableDto
         }
     }
 
+    logMessage(&LoomMessage::new(
+        format!("Extracted table entity: '{}' (fields: {}, indexes: {}, relations: {})", tName, fields.len(), indexes.len(), relations.len()),
+        miette::Severity::Advice,
+    ));
+
     TableDto { name: tName, decorators, fields, indexes, relations }
 }
 
@@ -857,6 +982,11 @@ fn extractProtocolEntity(pair: &pest::iterators::Pair<'_, ThreadRule>) -> Protoc
             _ => {}
         }
     }
+
+    logMessage(&LoomMessage::new(
+        format!("Extracted protocol entity: '{}' (channels: {})", pName, channels.len()),
+        miette::Severity::Advice,
+    ));
 
     ProtocolDto { name: pName, notes, diagrams, channels }
 }
@@ -930,6 +1060,11 @@ fn extractChannelEntity(pair: &pest::iterators::Pair<'_, ThreadRule>) -> Channel
         }
     }
 
+    logMessage(&LoomMessage::new(
+        format!("Extracted channel entity: '{}' (pattern: '{}', transport: '{}')", chName, pattern, transport),
+        miette::Severity::Advice,
+    ));
+
     ChannelDto {
         name: chName,
         decorators,
@@ -955,6 +1090,11 @@ fn extractFabricGroup(pair: &pest::iterators::Pair<'_, FabricRule>) -> FabricGro
         }
     }
 
+    logMessage(&LoomMessage::new(
+        format!("Extracted fabric group: '{}' (members: {})", gName, members.len()),
+        miette::Severity::Advice,
+    ));
+
     FabricGroupDto { name: gName, members }
 }
 
@@ -974,6 +1114,11 @@ fn extractFabricConnection(pair: &pest::iterators::Pair<'_, FabricRule>) -> Fabr
     let defaultRef = FabricEntityRefDto { kind: String::new(), path: String::new() };
     let src = refs.first().cloned().unwrap_or(defaultRef.clone());
     let tgt = refs.get(1).cloned().unwrap_or(defaultRef);
+
+    logMessage(&LoomMessage::new(
+        format!("Extracted fabric connection: '{}' -> '{}' ({})", src.path, tgt.path, lbl),
+        miette::Severity::Advice,
+    ));
 
     FabricConnectionDto { source: src, target: tgt, label: lbl }
 }
