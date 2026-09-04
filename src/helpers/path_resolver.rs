@@ -6,6 +6,7 @@ Purpose: Implementation of the PathResolver helper component and path resolver m
 #![allow(non_snake_case)]
 
 use std::path::Path;
+use crate::helpers::diagnostics::{logMessage, LoomMessage};
 
 /*
 Represents a resolved path containing both raw relative and canonical absolute formats.
@@ -15,18 +16,6 @@ pub struct LoomPath
 {
     pub absolute: String,
     pub relative: String,
-}
-
-/*
-Enumeration of possible path resolution errors.
-*/
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum ResolverError
-{
-    PathNotFound,
-    CanonicalizationFailed,
-    InvalidPathString,
-    NotAFile,
 }
 
 /*
@@ -67,27 +56,49 @@ Takes:
 	relativeTarget (Option<&str>): Optional relative target path when validating directory and target together.
 
 Gives:
-	Result<bool, ResolverError>: Ok(true) if valid, or appropriate ResolverError on failure.
+	Result<bool, String>: Ok(true) if valid, or Error string on failure.
 */
-fn validatePath(baseDir: &str, relativeTarget: Option<&str>) -> Result<bool, ResolverError>
+fn validatePath(baseDir: &str, relativeTarget: Option<&str>) -> Result<bool, String>
 {
+    logMessage(&LoomMessage::new(
+        format!("Validating path structure for baseDir '{}'", baseDir),
+        miette::Severity::Advice,
+    ));
+
     if isInvalidPathString(baseDir) {
-        return Err(ResolverError::InvalidPathString);
+        let err = format!("Invalid path string: '{}' contains null bytes or control characters", baseDir);
+        logMessage(&LoomMessage::new(&err, miette::Severity::Error));
+        return Err(err);
     }
 
     if let Some(target) = relativeTarget {
+        logMessage(&LoomMessage::new(
+            format!("Validating relative target path string '{}'", target),
+            miette::Severity::Advice,
+        ));
         if isInvalidPathString(target) {
-            return Err(ResolverError::InvalidPathString);
+            let err = format!("Invalid relative target path string: '{}' contains invalid characters", target);
+            logMessage(&LoomMessage::new(&err, miette::Severity::Error));
+            return Err(err);
         }
     } else {
         let path = Path::new(baseDir);
         if !path.exists() {
-            return Err(ResolverError::PathNotFound);
+            let err = format!("Path not found: '{}' does not exist", baseDir);
+            logMessage(&LoomMessage::new(&err, miette::Severity::Error));
+            return Err(err);
         }
         if !path.is_file() {
-            return Err(ResolverError::NotAFile);
+            let err = format!("Target path '{}' is a directory, expected a regular file", baseDir);
+            logMessage(&LoomMessage::new(&err, miette::Severity::Error));
+            return Err(err);
         }
     }
+
+    logMessage(&LoomMessage::new(
+        format!("Path validation successful for '{}'", baseDir),
+        miette::Severity::Advice,
+    ));
 
     Ok(true)
 }
@@ -100,31 +111,54 @@ Takes:
 	relativeTarget (&str): The relative target path.
 
 Gives:
-	Result<LoomPath, ResolverError>: The resolved LoomPath struct or ResolverError.
+	Result<LoomPath, String>: The resolved LoomPath struct or Error string.
 */
-pub fn resolvePath(baseDir: &str, relativeTarget: &str) -> Result<LoomPath, ResolverError>
+pub fn resolvePath(baseDir: &str, relativeTarget: &str) -> Result<LoomPath, String>
 {
+    logMessage(&LoomMessage::new(
+        format!("Resolving relative target path '{}' against base directory '{}'", relativeTarget, baseDir),
+        miette::Severity::Advice,
+    ));
+
     validatePath(baseDir, Some(relativeTarget))?;
 
     let basePath = Path::new(baseDir);
     let joined = basePath.join(relativeTarget);
 
+    logMessage(&LoomMessage::new(
+        format!("Attempting path canonicalization for joined path '{}'", joined.display()),
+        miette::Severity::Advice,
+    ));
+
     match joined.canonicalize() {
         Ok(canonical) => {
             if !canonical.is_file() {
-                return Err(ResolverError::NotAFile);
+                let err = format!("Canonicalized path '{}' is a directory, expected a regular file", canonical.display());
+                logMessage(&LoomMessage::new(&err, miette::Severity::Error));
+                return Err(err);
             }
             let absoluteStr = canonical.to_string_lossy().into_owned();
-            Ok(LoomPath {
+            let loomPath = LoomPath {
                 absolute: normalizedPathSeparators(&absoluteStr),
                 relative: normalizedPathSeparators(relativeTarget),
-            })
+            };
+
+            logMessage(&LoomMessage::new(
+                format!("Successfully resolved canonical path: '{}'", loomPath.absolute),
+                miette::Severity::Advice,
+            ));
+
+            Ok(loomPath)
         }
         Err(err) => {
             if err.kind() == std::io::ErrorKind::NotFound {
-                Err(ResolverError::PathNotFound)
+                let errMsg = format!("Path resolution failed: Target path '{}' not found", joined.display());
+                logMessage(&LoomMessage::new(&errMsg, miette::Severity::Error));
+                Err(errMsg)
             } else {
-                Err(ResolverError::CanonicalizationFailed)
+                let errMsg = format!("Canonicalization failed for path '{}': {}", joined.display(), err);
+                logMessage(&LoomMessage::new(&errMsg, miette::Severity::Error));
+                Err(errMsg)
             }
         }
     }
@@ -137,10 +171,15 @@ Takes:
 	filePath (&str): The file path to get the parent of.
 
 Gives:
-	Result<String, ResolverError>: The parent directory string or ResolverError.
+	Result<String, String>: The parent directory string or Error string.
 */
-pub fn getParentDir(filePath: &str) -> Result<String, ResolverError>
+pub fn getParentDir(filePath: &str) -> Result<String, String>
 {
+    logMessage(&LoomMessage::new(
+        format!("Extracting parent directory for file path '{}'", filePath),
+        miette::Severity::Advice,
+    ));
+
     validatePath(filePath, None)?;
 
     let path = Path::new(filePath);
@@ -148,13 +187,24 @@ pub fn getParentDir(filePath: &str) -> Result<String, ResolverError>
         Some(p) => {
             let pStr = p.to_string_lossy().trim().to_string();
             let normalized = normalizedPathSeparators(&pStr);
-            if normalized.is_empty() {
-                Ok(String::from("."))
+            let parentDir = if normalized.is_empty() {
+                String::from(".")
             } else {
-                Ok(normalized)
-            }
+                normalized
+            };
+
+            logMessage(&LoomMessage::new(
+                format!("Extracted parent directory '{}' for file '{}'", parentDir, filePath),
+                miette::Severity::Advice,
+            ));
+
+            Ok(parentDir)
         }
         None => {
+            logMessage(&LoomMessage::new(
+                format!("No explicit parent directory found for '{}', defaulting to '.'", filePath),
+                miette::Severity::Advice,
+            ));
             Ok(String::from("."))
         }
     }
@@ -242,7 +292,7 @@ mod tests
     fn testValidatePathWithNonExistentFile() -> ()
     {
         let result = validatePath("non_existent_file.txt", None);
-        assert_eq!(result, Err(ResolverError::PathNotFound));
+        assert!(result.is_err());
     }
 
     /*
@@ -258,11 +308,11 @@ mod tests
     fn testValidatePathWithJunkText() -> ()
     {
         let result = validatePath("invalid\0path", None);
-        assert_eq!(result, Err(ResolverError::InvalidPathString));
+        assert!(result.is_err());
     }
 
     /*
-    Tests validatePath with a directory path (should return NotAFile error when target is None).
+    Tests validatePath with a directory path (should return Error when target is None).
 
     Takes:
     	None.
@@ -274,7 +324,7 @@ mod tests
     fn testValidatePathWithDirectory() -> ()
     {
         let result = validatePath("helpers", None);
-        assert_eq!(result, Err(ResolverError::NotAFile));
+        assert!(result.is_err());
     }
 
     /*

@@ -6,7 +6,7 @@ Purpose: Integration tests for the PathResolver component verifying path resolut
 #![allow(non_snake_case)]
 
 use loom::helpers::path_resolver::{
-    getParentDir, resolvePath, LoomPath, ResolverError,
+    getParentDir, resolvePath, LoomPath,
 };
 
 /*
@@ -42,7 +42,7 @@ Gives:
 fn testResolvePathWrongRelativeTarget() -> ()
 {
     let result = resolvePath("helpers", "non_existent.rs");
-    assert_eq!(result, Err(ResolverError::PathNotFound));
+    assert!(result.is_err());
 }
 
 /*
@@ -58,7 +58,7 @@ Gives:
 fn testResolvePathWrongBaseDir() -> ()
 {
     let result = resolvePath("non_existent_dir", "path_resolver.rs");
-    assert_eq!(result, Err(ResolverError::PathNotFound));
+    assert!(result.is_err());
 }
 
 /*
@@ -74,7 +74,7 @@ Gives:
 fn testResolvePathWrongBaseAndWrongTarget() -> ()
 {
     let result = resolvePath("non_existent_dir", "non_existent.rs");
-    assert_eq!(result, Err(ResolverError::PathNotFound));
+    assert!(result.is_err());
 }
 
 /*
@@ -90,7 +90,7 @@ Gives:
 fn testResolvePathCanonicalizationFailed() -> ()
 {
     let result = resolvePath("Cargo.toml", "some_subpath");
-    assert_eq!(result, Err(ResolverError::CanonicalizationFailed));
+    assert!(result.is_err());
 }
 
 /*
@@ -106,14 +106,14 @@ Gives:
 fn testResolvePathWithJunkText() -> ()
 {
     let result = resolvePath("invalid\0path", "path_resolver.rs");
-    assert_eq!(result, Err(ResolverError::InvalidPathString));
+    assert!(result.is_err());
 
     let result2 = resolvePath("helpers", "invalid\npath");
-    assert_eq!(result2, Err(ResolverError::InvalidPathString));
+    assert!(result2.is_err());
 }
 
 /*
-Tests resolvePath with a directory path as target (should return NotAFile error).
+Tests resolvePath with a directory path as target (should return Error string).
 
 Takes:
 	None.
@@ -125,7 +125,7 @@ Gives:
 fn testResolvePathWithDirectory() -> ()
 {
     let result = resolvePath(".", "helpers");
-    assert_eq!(result, Err(ResolverError::NotAFile));
+    assert!(result.is_err());
 }
 
 /*
@@ -160,14 +160,14 @@ Gives:
 fn testGetParentDirWithJunkText() -> ()
 {
     let result = getParentDir("invalid\0path");
-    assert_eq!(result, Err(ResolverError::InvalidPathString));
+    assert!(result.is_err());
 
     let result2 = getParentDir("");
-    assert_eq!(result2, Err(ResolverError::InvalidPathString));
+    assert!(result2.is_err());
 }
 
 /*
-Tests getParentDir with a directory path (should return NotAFile error).
+Tests getParentDir with a directory path (should return Error string).
 
 Takes:
 	None.
@@ -179,5 +179,5 @@ Gives:
 fn testGetParentDirWithDirectory() -> ()
 {
     let result = getParentDir("helpers");
-    assert_eq!(result, Err(ResolverError::NotAFile));
+    assert!(result.is_err());
 }
