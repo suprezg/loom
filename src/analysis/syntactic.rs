@@ -7,7 +7,7 @@ Purpose: Syntactic parser engine for Thread specifications and Fabric blueprints
 
 use pest::Parser;
 use pest::error::{Error as PestError, InputLocation, ErrorVariant};
-use crate::helpers::diagnostics::LoomDiagnostic;
+use crate::helpers::diagnostics::{logMessage, LoomMessage, LoomDiagnostic};
 use crate::helpers::file_handler::{FileSpanMapping, resolveSpan};
 
 pub use crate::grammar::thread::{ThreadParser, Rule as ThreadRule};
@@ -74,8 +74,19 @@ pub fn parseThread<'a>(
     fileMap: &[FileSpanMapping],
 ) -> Result<pest::iterators::Pairs<'a, ThreadRule>, LoomDiagnostic>
 {
+    logMessage(&LoomMessage::new(
+        format!("Parsing Thread specification (len: {} bytes)...", content.len()),
+        miette::Severity::Advice,
+    ));
+
     match ThreadParser::parse(ThreadRule::thread_file, content) {
-        Ok(pairs) => Ok(pairs),
+        Ok(pairs) => {
+            logMessage(&LoomMessage::new(
+                "Successfully parsed Thread specification AST.".to_string(),
+                miette::Severity::Advice,
+            ));
+            Ok(pairs)
+        }
         Err(pestErr) => {
             let fallbackContent = pestErr.to_string();
             let sourceContent = fileMap.first().map(|f| f.content.as_str()).unwrap_or(&fallbackContent);
@@ -183,8 +194,19 @@ pub fn parseFabric<'a>(
     fileMap: &[FileSpanMapping],
 ) -> Result<pest::iterators::Pairs<'a, FabricRule>, LoomDiagnostic>
 {
+    logMessage(&LoomMessage::new(
+        format!("Parsing Fabric blueprint (len: {} bytes)...", content.len()),
+        miette::Severity::Advice,
+    ));
+
     match FabricParser::parse(FabricRule::fabric_file, content) {
-        Ok(pairs) => Ok(pairs),
+        Ok(pairs) => {
+            logMessage(&LoomMessage::new(
+                "Successfully parsed Fabric blueprint AST.".to_string(),
+                miette::Severity::Advice,
+            ));
+            Ok(pairs)
+        }
         Err(pestErr) => {
             let fallbackContent = pestErr.to_string();
             let sourceContent = fileMap.first().map(|f| f.content.as_str()).unwrap_or(&fallbackContent);

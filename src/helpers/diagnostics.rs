@@ -1,6 +1,6 @@
 /*
 File Name: diagnostics.rs
-Purpose: Implementation of the DiagnosticsLogger helper component using LoomDiagnostic, logInfo, renderSummary, and miette diagnostic dispatching.
+Purpose: Implementation of the DiagnosticsLogger helper component using LoomDiagnostic, LoomMessage, logMessage, and miette diagnostic dispatching.
 */
 
 #![allow(non_snake_case)]
@@ -18,6 +18,37 @@ pub enum LogLevel
     Quiet,
     Normal,
     Verbose,
+}
+
+/*
+Represents a formatted log message with severity level.
+*/
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LoomMessage
+{
+    pub message: String,
+    pub severity: miette::Severity,
+}
+
+impl LoomMessage
+{
+    /*
+    Creates a new LoomMessage instance with a message string and severity level.
+
+    Takes:
+    	message (impl Into<String>): The text message content.
+    	severity (miette::Severity): The severity level of the message.
+
+    Gives:
+    	LoomMessage: The populated LoomMessage instance.
+    */
+    pub fn new(message: impl Into<String>, severity: miette::Severity) -> Self
+    {
+        Self {
+            message: message.into(),
+            severity,
+        }
+    }
 }
 
 /*
@@ -129,19 +160,6 @@ impl LoomDiagnostic
     }
 }
 
-/*
-Holds overall metrics, warnings, error counts, and target output logs for execution summary.
-*/
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ExecutionSummary
-{
-    pub filesWritten: Vec<String>,
-    pub totalDocuments: usize,
-    pub errorCount: usize,
-    pub warningCount: usize,
-    pub elapsedMs: u64,
-}
-
 static ACTIVE_LOG_LEVEL: OnceLock<LogLevel> = OnceLock::new();
 
 /*
@@ -173,16 +191,16 @@ pub fn initLogLevel(level: LogLevel) -> ()
 }
 
 /*
-Determines whether a diagnostic of the given severity should be logged under the specified active log level.
+Determines whether a diagnostic or message of the given severity should be logged under the specified active log level.
 
 Takes:
-	severity (miette::Severity): The severity level of the diagnostic.
+	severity (miette::Severity): The severity level.
 	activeLevel (LogLevel): The active log level threshold.
 
 Gives:
-	bool: True if the diagnostic should be logged, false otherwise.
+	bool: True if the diagnostic or message should be logged, false otherwise.
 */
-fn shouldLogDiagnostic(severity: miette::Severity, activeLevel: LogLevel) -> bool
+fn shouldLog(severity: miette::Severity, activeLevel: LogLevel) -> bool
 {
     match severity {
         miette::Severity::Error => true,
@@ -205,7 +223,7 @@ pub fn logDiagnostic(report: &miette::Report) -> ()
     let activeLevel = getLogLevel();
     let severity = report.severity().unwrap_or(miette::Severity::Error);
 
-    if !shouldLogDiagnostic(severity, activeLevel) {
+    if !shouldLog(severity, activeLevel) {
         return;
     }
 
@@ -213,77 +231,31 @@ pub fn logDiagnostic(report: &miette::Report) -> ()
 }
 
 /*
-Logs an informational message to stdout if the active log level threshold is Verbose.
+Logs a LoomMessage to stdout if the active log level permits it based on message severity.
 
 Takes:
-	message (&str): The status or informational message string.
+	msg (&LoomMessage): The LoomMessage structure to log.
 
 Gives:
 	(): Unit type.
 */
-pub fn logInfo(message: &str) -> ()
+pub fn logMessage(msg: &LoomMessage) -> ()
 {
     let activeLevel = getLogLevel();
 
-    if activeLevel < LogLevel::Verbose {
+    if !shouldLog(msg.severity, activeLevel) {
         return;
     }
 
-    let formattedMessage = if message.starts_with('[') {
-        message.to_string()
-    } else {
-        format!("[INFO] {}", message)
+    let (label, color_code) = match msg.severity {
+        miette::Severity::Advice => ("Info", "\x1b[37m"),
+        miette::Severity::Warning => ("Warning", "\x1b[33m"),
+        miette::Severity::Error => ("Error", "\x1b[31m"),
     };
+
+    let formattedMessage = format!("{}[{}]\x1b[0m {}", color_code, label, msg.message);
 
     let stdout = std::io::stdout();
     let mut handle = stdout.lock();
     let _ = writeln!(handle, "{}", formattedMessage);
-}
-
-/*
-Renders the execution summary (success or failure) to stdout or stderr if active log level is not Quiet.
-
-Takes:
-	summary (&ExecutionSummary): The execution statistics structure.
-
-Gives:
-	(): Unit type.
-*/
-pub fn renderSummary(summary: &ExecutionSummary) -> ()
-{
-    let activeLevel = getLogLevel();
-
-    if activeLevel == LogLevel::Quiet {
-        return;
-    }
-
-    if summary.errorCount > 0 {
-        let mut output = String::new();
-        output.push_str("\n\x1b[31m========================================\x1b[0m\n");
-        output.push_str("WEAVE FAILED\n");
-        output.push_str(&format!("Errors: {}\n", summary.errorCount));
-        output.push_str(&format!("Warnings: {}\n", summary.warningCount));
-        output.push_str(&format!("Elapsed Time: {}ms\n", summary.elapsedMs));
-        output.push_str("\x1b[31m========================================\x1b[0m\n");
-
-        let stderr = std::io::stderr();
-        let mut handle = stderr.lock();
-        let _ = write!(handle, "{}", output);
-    } else {
-        let mut output = String::new();
-        output.push_str("\n\x1b[32m========================================\x1b[0m\n");
-        output.push_str("WEAVE SUCCESSFUL\n");
-        output.push_str("Files Written:\n");
-        for file in &summary.filesWritten {
-            output.push_str(&format!("  - {}\n", file));
-        }
-        output.push_str(&format!("Total Documents: {}\n", summary.totalDocuments));
-        output.push_str(&format!("Warnings: {}\n", summary.warningCount));
-        output.push_str(&format!("Elapsed Time: {}ms\n", summary.elapsedMs));
-        output.push_str("\x1b[32m========================================\x1b[0m\n");
-
-        let stdout = std::io::stdout();
-        let mut handle = stdout.lock();
-        let _ = write!(handle, "{}", output);
-    }
 }

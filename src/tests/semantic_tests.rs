@@ -27,8 +27,8 @@ fn testLM2001UnresolvedRef() -> ()
     let pairs = parseThread(&payload.threadContent, &payload.threadFileMapping).expect("Failed to parse thread file");
     let result = checkThread(&pairs, &payload.threadFileMapping);
     assert!(result.is_err(), "Expected LM2001 error for unresolved reference");
-    let report = result.err().unwrap();
-    logDiagnostic(&report);
+    let diag = result.err().unwrap();
+    logDiagnostic(&diag.toReport());
 }
 
 /*
@@ -52,8 +52,8 @@ fn testLM3001FabricUnresolvedRef() -> ()
 
     let result = checkFabric(&threadPairs, &fabricPairs, &fabricPayload.fabricFileMapping);
     assert!(result.is_err(), "Expected LM3001 error for unresolved fabric reference");
-    let report = result.err().unwrap();
-    logDiagnostic(&report);
+    let diag = result.err().unwrap();
+    logDiagnostic(&diag.toReport());
 }
 
 /*
@@ -72,8 +72,8 @@ fn testLM2002DuplicateDecl() -> ()
     let pairs = parseThread(&payload.threadContent, &payload.threadFileMapping).expect("Failed to parse thread file");
     let result = checkThread(&pairs, &payload.threadFileMapping);
     assert!(result.is_err(), "Expected LM2002 error for duplicate declaration");
-    let report = result.err().unwrap();
-    logDiagnostic(&report);
+    let diag = result.err().unwrap();
+    logDiagnostic(&diag.toReport());
 }
 
 /*
@@ -92,8 +92,8 @@ fn testLM2003StorageIndexCol() -> ()
     let pairs = parseThread(&payload.threadContent, &payload.threadFileMapping).expect("Failed to parse thread file");
     let result = checkThread(&pairs, &payload.threadFileMapping);
     assert!(result.is_err(), "Expected LM2003 error for invalid storage index column");
-    let report = result.err().unwrap();
-    logDiagnostic(&report);
+    let diag = result.err().unwrap();
+    logDiagnostic(&diag.toReport());
 }
 
 /*
@@ -112,8 +112,8 @@ fn testLM2004StorageRelation() -> ()
     let pairs = parseThread(&payload.threadContent, &payload.threadFileMapping).expect("Failed to parse thread file");
     let result = checkThread(&pairs, &payload.threadFileMapping);
     assert!(result.is_err(), "Expected LM2004 error for invalid storage relation target");
-    let report = result.err().unwrap();
-    logDiagnostic(&report);
+    let diag = result.err().unwrap();
+    logDiagnostic(&diag.toReport());
 }
 
 /*
@@ -132,8 +132,8 @@ fn testLM2005ProtocolChannel() -> ()
     let pairs = parseThread(&payload.threadContent, &payload.threadFileMapping).expect("Failed to parse thread file");
     let result = checkThread(&pairs, &payload.threadFileMapping);
     assert!(result.is_err(), "Expected LM2005 error for invalid protocol channel target");
-    let report = result.err().unwrap();
-    logDiagnostic(&report);
+    let diag = result.err().unwrap();
+    logDiagnostic(&diag.toReport());
 }
 
 /*
@@ -155,7 +155,7 @@ fn testLM2006MissingDecorator() -> ()
     let warnings = result.ok().unwrap();
     assert!(!warnings.is_empty(), "Expected at least one LM2006 warning");
     for warn in &warnings {
-        logDiagnostic(warn);
+        logDiagnostic(&warn.toReport());
     }
 }
 
@@ -178,6 +178,6 @@ fn testLM2007UnusedSymbol() -> ()
     let warnings = result.ok().unwrap();
     assert!(!warnings.is_empty(), "Expected at least one LM2007 warning");
     for warn in &warnings {
-        logDiagnostic(warn);
+        logDiagnostic(&warn.toReport());
     }
 }

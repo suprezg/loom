@@ -22,7 +22,7 @@ Gives:
 	(): Unit type.
 */
 #[test]
-fn testProduceJsonFromValidExamples() -> ()
+fn testDocumentComposer() -> ()
 {
     let inputDir = "../examples/valid";
     let outputDir = "../data";
@@ -57,25 +57,25 @@ fn testProduceJsonFromValidExamples() -> ()
 
     /* Execute Thread Semantic Analysis with File Span Mappings */
     let threadSemanticResult = checkThread(&threadPairs, &payload.threadFileMapping);
-    if let Err(report) = threadSemanticResult {
-        logDiagnostic(&report);
+    if let Err(diag) = threadSemanticResult {
+        logDiagnostic(&diag.toReport());
         panic!("Thread semantic analysis error occurred");
     }
     if let Ok(warnings) = threadSemanticResult {
         for warn in &warnings {
-            logDiagnostic(warn);
+            logDiagnostic(&warn.toReport());
         }
     }
 
     /* Execute Fabric Cross-Referencing Semantic Analysis by Reference */
     let fabricSemanticResult = checkFabric(&threadPairs, &fabricPairs, &payload.fabricFileMapping);
-    if let Err(report) = fabricSemanticResult {
-        logDiagnostic(&report);
+    if let Err(diag) = fabricSemanticResult {
+        logDiagnostic(&diag.toReport());
         panic!("Fabric semantic analysis error occurred");
     }
     if let Ok(warnings) = fabricSemanticResult {
         for warn in &warnings {
-            logDiagnostic(warn);
+            logDiagnostic(&warn.toReport());
         }
     }
 

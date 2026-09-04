@@ -1,12 +1,12 @@
 /*
 File Name: diagnostics_tests.rs
-Purpose: Integration tests for the DiagnosticsLogger component verifying miette diagnostic logging, logInfo, and renderSummary when log level is initialized to Quiet.
+Purpose: Integration tests for the DiagnosticsLogger component verifying miette diagnostic logging and logMessage when log level is initialized to Quiet.
 */
 
 #![allow(non_snake_case)]
 
 use loom::helpers::diagnostics::{
-    initLogLevel, logDiagnostic, logInfo, renderSummary, ExecutionSummary, LogLevel, LoomDiagnostic,
+    initLogLevel, logDiagnostic, logMessage, LogLevel, LoomDiagnostic, LoomMessage,
 };
 
 /*
@@ -66,7 +66,7 @@ fn createSampleDiagnostics() -> (miette::Report, miette::Report, miette::Report)
 }
 
 /*
-Tests logging Info, Warning, and Error diagnostics, logInfo, and renderSummary after initializing log level to Quiet.
+Tests logging Info, Warning, and Error diagnostics after initializing log level to Quiet.
 
 Takes:
 	None.
@@ -83,15 +83,27 @@ fn testLogDiagnosticsInQuietLogLevel() -> ()
     logDiagnostic(&infoReport);
     logDiagnostic(&warningReport);
     logDiagnostic(&errorReport);
+}
 
-    logInfo("Test info message - should be suppressed in quiet mode");
+/*
+Tests logMessage with Info, Warning, and Error LoomMessage instances after initializing log level to Quiet.
 
-    let summary = ExecutionSummary {
-        filesWritten: vec![String::from("docs/DESIGN.md")],
-        totalDocuments: 1,
-        errorCount: 0,
-        warningCount: 0,
-        elapsedMs: 10,
-    };
-    renderSummary(&summary);
+Takes:
+	None.
+
+Gives:
+	(): Unit type.
+*/
+#[test]
+fn testLogMessageInQuietLogLevel() -> ()
+{
+    initLogLevel(LogLevel::Quiet);
+
+    let infoMsg = LoomMessage::new("Test info message - should be suppressed in quiet mode", miette::Severity::Advice);
+    let warnMsg = LoomMessage::new("Test warning message - should be suppressed in quiet mode", miette::Severity::Warning);
+    let errorMsg = LoomMessage::new("Test error message", miette::Severity::Error);
+
+    logMessage(&infoMsg);
+    logMessage(&warnMsg);
+    logMessage(&errorMsg);
 }
