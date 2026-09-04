@@ -6,11 +6,10 @@ Purpose: Efficient single-pass AST traversal and semantic analysis engine for Th
 #![allow(non_snake_case)]
 
 use std::collections::{HashMap, HashSet};
-use miette::Report;
 
 use crate::grammar::thread::Rule as ThreadRule;
 use crate::grammar::fabric::Rule as FabricRule;
-use crate::helpers::diagnostics::LoomDiagnostic;
+use crate::helpers::diagnostics::{logMessage, LoomMessage, LoomDiagnostic};
 use crate::helpers::file_handler::{FileSpanMapping, resolveSpan};
 
 /*
@@ -73,11 +72,11 @@ Takes:
 	diagramReferences (HashSet<String>): Set of referenced diagram names.
 	relations (Vec<RelationCheckInfo>): List of extracted database relation statements to check.
 	protocolChannelTargets (Vec<(String, SpanInfo)>): List of channel target statements (Sender, Receiver, Payload).
-	warnings (Vec<Report>): List of accumulated warning reports.
+	warnings (Vec<LoomDiagnostic>): List of accumulated warning diagnostics.
 	fileMap (&[FileSpanMapping]): List of file span offset mappings.
 
 Gives:
-	Result<(), Report>: Returns Ok(()) on success, or Err(Report) on early exit semantic error.
+	Result<(), LoomDiagnostic>: Returns Ok(()) on success, or Err(LoomDiagnostic) on early exit semantic error.
 */
 fn traverseThreadNode(
     pair: pest::iterators::Pair<'_, ThreadRule>,
@@ -93,9 +92,9 @@ fn traverseThreadNode(
     diagramReferences: &mut HashSet<String>,
     relations: &mut Vec<RelationCheckInfo>,
     protocolChannelTargets: &mut Vec<(String, SpanInfo)>,
-    warnings: &mut Vec<Report>,
+    warnings: &mut Vec<LoomDiagnostic>,
     fileMap: &[FileSpanMapping],
-) -> Result<(), Report>
+) -> Result<(), LoomDiagnostic>
 {
     match pair.as_rule() {
         ThreadRule::feature_entity
@@ -122,8 +121,12 @@ fn traverseThreadNode(
                             format!("Semantic error: Duplicate entity declaration '{}'. Entity was already declared.", eName),
                             miette::Severity::Error,
                         );
-                        return Err(diag.toReport());
+                        return Err(diag);
                     }
+                    logMessage(&LoomMessage::new(
+                        format!("Discovered entity declaration: '{}'", eName),
+                        miette::Severity::Advice,
+                    ));
                     entityNames.insert(eName.clone(), spanInfo);
                     *currentEntity = Some(eName);
                     break;
@@ -166,8 +169,12 @@ fn traverseThreadNode(
                                 format!("Semantic error: Duplicate member declaration '{}'. Symbol was already declared.", mName),
                                 miette::Severity::Error,
                             );
-                            return Err(diag.toReport());
+                            return Err(diag);
                         }
+                        logMessage(&LoomMessage::new(
+                            format!("Discovered member declaration: '{}'", scoped),
+                            miette::Severity::Advice,
+                        ));
                         memberNames.insert(scoped, spanInfo);
                     }
                 } else if isDecoratorRule(r) {
@@ -191,7 +198,7 @@ fn traverseThreadNode(
                     format!("Semantic warning: Scenario '{}' missing decorator annotation.", scenarioName),
                     miette::Severity::Warning,
                 );
-                warnings.push(diag.toReport());
+                warnings.push(diag);
             }
         }
         ThreadRule::table_block => {
@@ -206,6 +213,10 @@ fn traverseThreadNode(
 
                     if let Some(eName) = currentEntity {
                         let scoped = format!("{}::{}", eName, tName);
+                        logMessage(&LoomMessage::new(
+                            format!("Discovered table declaration: '{}'", scoped),
+                            miette::Severity::Advice,
+                        ));
                         memberNames.insert(scoped, spanInfo);
                     }
                     break;
@@ -234,8 +245,12 @@ fn traverseThreadNode(
                         format!("Semantic error: Duplicate field declaration '{}'. Field was already declared in table.", fName),
                         miette::Severity::Error,
                     );
-                    return Err(diag.toReport());
+                    return Err(diag);
                 }
+                logMessage(&LoomMessage::new(
+                    format!("Registered table field: '{}.{}'", tName, fName),
+                    miette::Severity::Advice,
+                ));
                 tableFields.insert(scoped, spanInfo);
             }
         }
@@ -261,8 +276,12 @@ fn traverseThreadNode(
                         format!("Semantic error: Duplicate model member '{}'. Member was already declared in model.", mName),
                         miette::Severity::Error,
                     );
-                    return Err(diag.toReport());
+                    return Err(diag);
                 }
+                logMessage(&LoomMessage::new(
+                    format!("Registered model member: '{}.{}'", eName, mName),
+                    miette::Severity::Advice,
+                ));
                 modelFields.insert(scoped, spanInfo);
             }
         }
@@ -288,7 +307,7 @@ fn traverseThreadNode(
                             format!("Semantic error: Storage index column '{}' not found in table '{}'.", colName, tName),
                             miette::Severity::Error,
                         );
-                        return Err(diag.toReport());
+                        return Err(diag);
                     }
                 }
             }
@@ -311,6 +330,10 @@ fn traverseThreadNode(
             }
 
             if colRefs.len() == 2 {
+                logMessage(&LoomMessage::new(
+                    format!("Discovered DB relation statement: '{}.{}' <-> '{}.{}'", colRefs[0].0, colRefs[0].1, colRefs[1].0, colRefs[1].1),
+                    miette::Severity::Advice,
+                ));
                 relations.push(RelationCheckInfo {
                     leftTable: colRefs[0].0.clone(),
                     leftCol: colRefs[0].1.clone(),
@@ -327,6 +350,10 @@ fn traverseThreadNode(
                     let targetVal = child.as_str().trim_matches('"').to_string();
                     let span = child.as_span();
                     let spanInfo = SpanInfo { start: span.start(), length: span.end() - span.start() };
+                    logMessage(&LoomMessage::new(
+                        format!("Discovered protocol channel target: '{}'", targetVal),
+                        miette::Severity::Advice,
+                    ));
                     protocolChannelTargets.push((targetVal, spanInfo));
                 }
             }
@@ -343,6 +370,10 @@ fn traverseThreadNode(
 
             if let (Some(open), Some(close)) = (decStr.find('('), decStr.find(')')) {
                 let target = decStr[open + 1..close].trim().to_string();
+                logMessage(&LoomMessage::new(
+                    format!("Discovered decorator referencing target: '{}'", target),
+                    miette::Severity::Advice,
+                ));
                 references.push(ReferenceSymbol { target: target.clone(), span: spanInfo });
                 if decStr.starts_with("@diagram") {
                     diagramReferences.insert(target);
@@ -355,6 +386,10 @@ fn traverseThreadNode(
                     let dName = child.as_str().to_string();
                     let span = child.as_span();
                     let spanInfo = SpanInfo { start: span.start(), length: span.end() - span.start() };
+                    logMessage(&LoomMessage::new(
+                        format!("Discovered diagram block: '{}'", dName),
+                        miette::Severity::Advice,
+                    ));
                     diagramNames.insert(dName, spanInfo);
                     break;
                 }
@@ -395,13 +430,18 @@ Takes:
 	fileMap (&[FileSpanMapping]): List of ingested file span offset mappings.
 
 Gives:
-	Result<Vec<Report>, Report>: Returns list of warnings if no errors, or an error report on semantic error.
+	Result<Vec<LoomDiagnostic>, LoomDiagnostic>: Returns list of warnings if no errors, or LoomDiagnostic error on semantic error.
 */
 pub fn checkThread(
     pairs: &pest::iterators::Pairs<'_, ThreadRule>,
     fileMap: &[FileSpanMapping],
-) -> Result<Vec<Report>, Report>
+) -> Result<Vec<LoomDiagnostic>, LoomDiagnostic>
 {
+    logMessage(&LoomMessage::new(
+        "Starting single-pass AST semantic analysis for Thread specification...".to_string(),
+        miette::Severity::Advice,
+    ));
+
     let mut entityNames: HashMap<String, SpanInfo> = HashMap::new();
     let mut memberNames: HashMap<String, SpanInfo> = HashMap::new();
     let mut tableFields: HashMap<(String, String), SpanInfo> = HashMap::new();
@@ -413,7 +453,7 @@ pub fn checkThread(
     let mut diagramReferences: HashSet<String> = HashSet::new();
     let mut relations: Vec<RelationCheckInfo> = Vec::new();
     let mut protocolChannelTargets: Vec<(String, SpanInfo)> = Vec::new();
-    let mut warnings: Vec<Report> = Vec::new();
+    let mut warnings: Vec<LoomDiagnostic> = Vec::new();
 
     let mut currentEntity: Option<String> = None;
     let mut currentTable: Option<String> = None;
@@ -439,7 +479,22 @@ pub fn checkThread(
         )?;
     }
 
+    logMessage(&LoomMessage::new(
+        format!(
+            "AST traversal complete. Extracted {} entities, {} members, {} tables, {} diagrams.",
+            entityNames.len(),
+            memberNames.len(),
+            tableNames.len(),
+            diagramNames.len()
+        ),
+        miette::Severity::Advice,
+    ));
+
     /* LM2004: Storage Relation Target Verification against AST tableNames & tableFields */
+    logMessage(&LoomMessage::new(
+        format!("Validating {} storage relations...", relations.len()),
+        miette::Severity::Advice,
+    ));
     for relInfo in &relations {
         let leftTableOk = tableNames.contains_key(&relInfo.leftTable);
         let leftColOk = tableFields.contains_key(&(relInfo.leftTable.clone(), relInfo.leftCol.clone()));
@@ -460,7 +515,7 @@ pub fn checkThread(
                 format!("Semantic error: Storage relation target '{}' does not exist in Storage '{}'.", invalidRef, relInfo.storageName),
                 miette::Severity::Error,
             );
-            return Err(diag.toReport());
+            return Err(diag);
         }
 
         if !rightTableOk || !rightColOk {
@@ -477,11 +532,15 @@ pub fn checkThread(
                 format!("Semantic error: Storage relation target '{}' does not exist in Storage '{}'.", invalidRef, relInfo.storageName),
                 miette::Severity::Error,
             );
-            return Err(diag.toReport());
+            return Err(diag);
         }
     }
 
     /* LM2005: Protocol Channel Target Verification against declared AST entities & members */
+    logMessage(&LoomMessage::new(
+        format!("Validating {} protocol channel targets...", protocolChannelTargets.len()),
+        miette::Severity::Advice,
+    ));
     for (targetVal, spanInfo) in &protocolChannelTargets {
         let containsField = targetVal.contains('.');
         let isPrimitiveType = ["String", "UUID", "Int", "Boolean", "Float", "DateTime", "Text"].contains(&targetVal.as_str());
@@ -511,11 +570,15 @@ pub fn checkThread(
                 format!("Semantic error: Channel target '{}' does not match any known entity or member. Only Entity and Member names are allowed (fields are not permitted).", targetVal),
                 miette::Severity::Error,
             );
-            return Err(diag.toReport());
+            return Err(diag);
         }
     }
 
     /* LM2001: Check unresolved decorator references against extracted entity/member/diagram AST symbols */
+    logMessage(&LoomMessage::new(
+        format!("Validating {} decorator references...", references.len()),
+        miette::Severity::Advice,
+    ));
     for refSym in &references {
         if !entityNames.contains_key(&refSym.target) && !memberNames.contains_key(&refSym.target) && !diagramNames.contains_key(&refSym.target) {
             let (tPath, tContent, lStart) = resolveSpan(fileMap, refSym.span.start);
@@ -530,11 +593,15 @@ pub fn checkThread(
                 format!("Semantic error: Unresolved reference '{}'. Target entity or member was not found.", refSym.target),
                 miette::Severity::Error,
             );
-            return Err(diag.toReport());
+            return Err(diag);
         }
     }
 
     /* Warnings Checks: Unified LM2007 Unused Symbol Verification */
+    logMessage(&LoomMessage::new(
+        "Performing unused symbol checks (LM2007)...".to_string(),
+        miette::Severity::Advice,
+    ));
     let mut refTargetsSet: HashSet<String> = references.iter().map(|r| r.target.clone()).collect();
     for (chTarget, _) in &protocolChannelTargets {
         refTargetsSet.insert(chTarget.clone());
@@ -556,7 +623,7 @@ pub fn checkThread(
                 format!("Semantic warning: Unused entity '{}'. Entity is declared but never referenced.", entity),
                 miette::Severity::Warning,
             );
-            warnings.push(diag.toReport());
+            warnings.push(diag);
         }
     }
 
@@ -577,7 +644,7 @@ pub fn checkThread(
                 format!("Semantic warning: Unused member '{}'. Member is declared but never referenced.", mName),
                 miette::Severity::Warning,
             );
-            warnings.push(diag.toReport());
+            warnings.push(diag);
         }
     }
 
@@ -596,9 +663,14 @@ pub fn checkThread(
                 format!("Semantic warning: Unused diagram '{}'. Diagram is declared but never referenced.", diagName),
                 miette::Severity::Warning,
             );
-            warnings.push(diag.toReport());
+            warnings.push(diag);
         }
     }
+
+    logMessage(&LoomMessage::new(
+        format!("Thread semantic analysis complete with {} warning(s).", warnings.len()),
+        miette::Severity::Advice,
+    ));
 
     Ok(warnings)
 }
@@ -682,14 +754,19 @@ Takes:
 	fabricFileMap (&[FileSpanMapping]): List of fabric file span offset mappings.
 
 Gives:
-	Result<Vec<Report>, Report>: Returns list of warnings if no errors, or an error report on semantic error.
+	Result<Vec<LoomDiagnostic>, LoomDiagnostic>: Returns list of warnings if no errors, or LoomDiagnostic error on semantic error.
 */
 pub fn checkFabric(
     threadPairs: &pest::iterators::Pairs<'_, ThreadRule>,
     fabricPairs: &pest::iterators::Pairs<'_, FabricRule>,
     fabricFileMap: &[FileSpanMapping],
-) -> Result<Vec<Report>, Report>
+) -> Result<Vec<LoomDiagnostic>, LoomDiagnostic>
 {
+    logMessage(&LoomMessage::new(
+        "Starting fabric blueprint semantic cross-referencing analysis...".to_string(),
+        miette::Severity::Advice,
+    ));
+
     let mut threadEntities: HashSet<String> = HashSet::new();
     let mut threadMembers: HashSet<String> = HashSet::new();
     let mut currentEntity: Option<String> = None;
@@ -698,6 +775,14 @@ pub fn checkFabric(
     for pair in threadPairs.clone() {
         collectThreadSymbols(pair, &mut currentEntity, &mut threadEntities, &mut threadMembers);
     }
+    logMessage(&LoomMessage::new(
+        format!(
+            "Collected {} declared thread entities and {} declared thread members.",
+            threadEntities.len(),
+            threadMembers.len()
+        ),
+        miette::Severity::Advice,
+    ));
 
     /* Step 2: Recursively extract fabric references */
     let mut fabricReferencedTargets: HashSet<String> = HashSet::new();
@@ -705,8 +790,16 @@ pub fn checkFabric(
     for pair in fabricPairs.clone() {
         collectFabricReferences(pair, &mut fabricReferencedTargets, &mut fabricRefSpans);
     }
+    logMessage(&LoomMessage::new(
+        format!("Extracted {} fabric reference target(s).", fabricReferencedTargets.len()),
+        miette::Severity::Advice,
+    ));
 
     /* Step 3: Check LM3001 errors for unresolved fabric references */
+    logMessage(&LoomMessage::new(
+        "Validating fabric entity references against thread declarations...".to_string(),
+        miette::Severity::Advice,
+    ));
     for (path, span) in &fabricRefSpans {
         let existsInThread = threadEntities.contains(path) || threadMembers.contains(path);
         if !existsInThread {
@@ -722,12 +815,16 @@ pub fn checkFabric(
                 format!("Semantic error: Unresolved fabric reference '{}'. Target thread entity was not found.", path),
                 miette::Severity::Error,
             );
-            return Err(diag.toReport());
+            return Err(diag);
         }
     }
 
     /* Step 4: Check LM3002 warnings for declared thread entities or members not referenced in fabric */
-    let mut warnings: Vec<Report> = Vec::new();
+    logMessage(&LoomMessage::new(
+        "Checking for unused thread entities in fabric blueprint...".to_string(),
+        miette::Severity::Advice,
+    ));
+    let mut warnings: Vec<LoomDiagnostic> = Vec::new();
     for entity in &threadEntities {
         let isRef = fabricReferencedTargets.contains(entity) || fabricReferencedTargets.iter().any(|r| r.starts_with(&format!("{}::", entity)));
         if !isRef {
@@ -743,9 +840,14 @@ pub fn checkFabric(
                 format!("Semantic warning: Thread entity or member '{}' is declared but not referenced in fabric blueprint.", entity),
                 miette::Severity::Warning,
             );
-            warnings.push(diag.toReport());
+            warnings.push(diag);
         }
     }
+
+    logMessage(&LoomMessage::new(
+        format!("Fabric semantic analysis complete with {} warning(s).", warnings.len()),
+        miette::Severity::Advice,
+    ));
 
     Ok(warnings)
 }
