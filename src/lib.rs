@@ -8,3 +8,4 @@ Purpose: Root library entry point for the Loom compiler.
 pub mod grammar;
 pub mod helpers;
 pub mod analysis;
+pub mod services;
