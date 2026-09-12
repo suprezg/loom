@@ -19,7 +19,7 @@ Gives:
 #[test]
 fn testGiveFilePayloadSuccess() -> ()
 {
-    let path = "../examples/valid/authentication.thread";
+    let path = "../../examples/valid/authentication.thread";
     let result = giveFilePayload(path);
     assert!(result.is_ok());
 
@@ -58,8 +58,8 @@ Gives:
 #[test]
 fn testMergePayloadSuccess() -> ()
 {
-    let p1 = giveFilePayload("../examples/valid/authentication.thread").expect("Failed to ingest authentication.thread");
-    let p2 = giveFilePayload("../examples/valid/auth_service.thread").expect("Failed to ingest auth_service.thread");
+    let p1 = giveFilePayload("../../examples/valid/authentication.thread").expect("Failed to ingest authentication.thread");
+    let p2 = giveFilePayload("../../examples/valid/auth_service.thread").expect("Failed to ingest auth_service.thread");
 
     let result = mergeFilePayloads(vec![p1, p2]);
     assert!(result.is_ok());
@@ -86,7 +86,7 @@ fn testMergePayloadFailure() -> ()
     let emptyResult = mergeFilePayloads(vec![]);
     assert!(emptyResult.is_err());
 
-    let p1 = giveFilePayload("../examples/valid/authentication.thread").expect("Failed to ingest authentication.thread");
+    let p1 = giveFilePayload("../../examples/valid/authentication.thread").expect("Failed to ingest authentication.thread");
     let duplicateResult = mergeFilePayloads(vec![p1.clone(), p1]);
     assert!(duplicateResult.is_err());
 }

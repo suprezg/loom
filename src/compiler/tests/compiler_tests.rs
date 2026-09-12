@@ -7,7 +7,7 @@ Purpose: Integration tests verifying the high-level build and validate services 
 
 use std::fs;
 use loom::helpers::diagnostics::{initLogLevel, LogLevel};
-use loom::services::compiler::{build, validate};
+use loom::services::pipeline::{build, validate};
 
 /*
 Tests that validate succeeds on the valid examples directory.
@@ -22,7 +22,7 @@ Gives:
 fn testValidateWithValidExamples() -> ()
 {
     initLogLevel(LogLevel::Quiet);
-    let paths = vec!["../examples/valid".to_string()];
+    let paths = vec!["../../examples/valid".to_string()];
     let result = validate(&paths);
     assert!(result.is_ok(), "Expected validate to succeed on valid examples");
 }
@@ -41,10 +41,10 @@ fn testValidateWithMultipleInputFiles() -> ()
 {
     initLogLevel(LogLevel::Quiet);
     let paths = vec![
-        "../examples/valid/app_storage.thread".to_string(),
-        "../examples/valid/auth_protocol.thread".to_string(),
-        "../examples/valid/auth_service.thread".to_string(),
-        "../examples/valid/authentication.thread".to_string(),
+        "../../examples/valid/app_storage.thread".to_string(),
+        "../../examples/valid/auth_protocol.thread".to_string(),
+        "../../examples/valid/auth_service.thread".to_string(),
+        "../../examples/valid/authentication.thread".to_string(),
     ];
     let result = validate(&paths);
     assert!(result.is_ok(), "Expected validate to succeed on multiple valid files");
@@ -63,7 +63,7 @@ Gives:
 fn testValidateWithInvalidExample() -> ()
 {
     initLogLevel(LogLevel::Quiet);
-    let paths = vec!["../examples/invalid/lm2001_unresolved_reference.thread".to_string()];
+    let paths = vec!["../../examples/invalid/lm2001_unresolved_reference.thread".to_string()];
     let result = validate(&paths);
     assert!(result.is_err(), "Expected validate to fail on invalid example");
 }
@@ -81,10 +81,10 @@ Gives:
 fn testBuildWithValidExamples() -> ()
 {
     initLogLevel(LogLevel::Quiet);
-    let outputDir = "../data/test_build_output";
+    let outputDir = "../../data/test_build_output";
     let _ = fs::remove_dir_all(outputDir);
 
-    let paths = vec!["../examples/valid".to_string()];
+    let paths = vec!["../../examples/valid".to_string()];
     let result = build(&paths, outputDir);
     assert!(result.is_ok(), "Expected build to succeed on valid examples");
 
@@ -110,15 +110,15 @@ Gives:
 fn testBuildWithMultipleInputFiles() -> ()
 {
     initLogLevel(LogLevel::Quiet);
-    let outputDir = "../data/test_multiple_build_output";
+    let outputDir = "../../data/test_multiple_build_output";
     let _ = fs::remove_dir_all(outputDir);
 
     let paths = vec![
-        "../examples/valid/app_storage.thread".to_string(),
-        "../examples/valid/auth_protocol.thread".to_string(),
-        "../examples/valid/auth_service.thread".to_string(),
-        "../examples/valid/authentication.thread".to_string(),
-        "../examples/valid/system.fabric".to_string(),
+        "../../examples/valid/app_storage.thread".to_string(),
+        "../../examples/valid/auth_protocol.thread".to_string(),
+        "../../examples/valid/auth_service.thread".to_string(),
+        "../../examples/valid/authentication.thread".to_string(),
+        "../../examples/valid/system.fabric".to_string(),
     ];
     let result = build(&paths, outputDir);
     assert!(result.is_ok(), "Expected build to succeed on multiple valid files");
@@ -145,8 +145,8 @@ Gives:
 fn testBuildWithInvalidExample() -> ()
 {
     initLogLevel(LogLevel::Quiet);
-    let outputDir = "../data/test_invalid_build_output";
-    let paths = vec!["../examples/invalid/lm2002_duplicate_declaration.thread".to_string()];
+    let outputDir = "../../data/test_invalid_build_output";
+    let paths = vec!["../../examples/invalid/lm2002_duplicate_declaration.thread".to_string()];
     let result = build(&paths, outputDir);
     assert!(result.is_err(), "Expected build to fail on invalid example");
 }

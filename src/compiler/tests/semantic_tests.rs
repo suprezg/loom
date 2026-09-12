@@ -23,7 +23,7 @@ Gives:
 #[test]
 fn testLM2001UnresolvedRef() -> ()
 {
-    let payload = giveFilePayload("../examples/invalid/lm2001_unresolved_reference.thread").expect("Failed to ingest lm2001_unresolved_reference.thread");
+    let payload = giveFilePayload("../../examples/invalid/lm2001_unresolved_reference.thread").expect("Failed to ingest lm2001_unresolved_reference.thread");
     let pairs = parseThread(&payload.threadContent, &payload.threadFileMapping).expect("Failed to parse thread file");
     let result = checkThread(&pairs, &payload.threadFileMapping);
     assert!(result.is_err(), "Expected LM2001 error for unresolved reference");
@@ -43,8 +43,8 @@ Gives:
 #[test]
 fn testLM3001FabricUnresolvedRef() -> ()
 {
-    let fabricPayload = giveFilePayload("../examples/invalid/lm3001_fabric_unresolved_reference.fabric").expect("Failed to ingest lm3001_fabric_unresolved_reference.fabric");
-    let authPayload = giveFilePayload("../examples/valid/auth_service.thread").expect("Failed to ingest auth_service.thread");
+    let fabricPayload = giveFilePayload("../../examples/invalid/lm3001_fabric_unresolved_reference.fabric").expect("Failed to ingest lm3001_fabric_unresolved_reference.fabric");
+    let authPayload = giveFilePayload("../../examples/valid/auth_service.thread").expect("Failed to ingest auth_service.thread");
     
     let threadPairs = parseThread(&authPayload.threadContent, &authPayload.threadFileMapping).expect("Failed to parse thread file");
     let fabricContent = fabricPayload.fabricContent.as_deref().unwrap_or("");
@@ -68,7 +68,7 @@ Gives:
 #[test]
 fn testLM2002DuplicateDecl() -> ()
 {
-    let payload = giveFilePayload("../examples/invalid/lm2002_duplicate_declaration.thread").expect("Failed to ingest lm2002_duplicate_declaration.thread");
+    let payload = giveFilePayload("../../examples/invalid/lm2002_duplicate_declaration.thread").expect("Failed to ingest lm2002_duplicate_declaration.thread");
     let pairs = parseThread(&payload.threadContent, &payload.threadFileMapping).expect("Failed to parse thread file");
     let result = checkThread(&pairs, &payload.threadFileMapping);
     assert!(result.is_err(), "Expected LM2002 error for duplicate declaration");
@@ -88,7 +88,7 @@ Gives:
 #[test]
 fn testLM2003StorageIndexCol() -> ()
 {
-    let payload = giveFilePayload("../examples/invalid/lm2003_storage_index_column.thread").expect("Failed to ingest lm2003_storage_index_column.thread");
+    let payload = giveFilePayload("../../examples/invalid/lm2003_storage_index_column.thread").expect("Failed to ingest lm2003_storage_index_column.thread");
     let pairs = parseThread(&payload.threadContent, &payload.threadFileMapping).expect("Failed to parse thread file");
     let result = checkThread(&pairs, &payload.threadFileMapping);
     assert!(result.is_err(), "Expected LM2003 error for invalid storage index column");
@@ -108,7 +108,7 @@ Gives:
 #[test]
 fn testLM2004StorageRelation() -> ()
 {
-    let payload = giveFilePayload("../examples/invalid/lm2004_storage_relation_target.thread").expect("Failed to ingest lm2004_storage_relation_target.thread");
+    let payload = giveFilePayload("../../examples/invalid/lm2004_storage_relation_target.thread").expect("Failed to ingest lm2004_storage_relation_target.thread");
     let pairs = parseThread(&payload.threadContent, &payload.threadFileMapping).expect("Failed to parse thread file");
     let result = checkThread(&pairs, &payload.threadFileMapping);
     assert!(result.is_err(), "Expected LM2004 error for invalid storage relation target");
@@ -128,7 +128,7 @@ Gives:
 #[test]
 fn testLM2005ProtocolChannel() -> ()
 {
-    let payload = giveFilePayload("../examples/invalid/lm2005_protocol_channel_payload.thread").expect("Failed to ingest lm2005_protocol_channel_payload.thread");
+    let payload = giveFilePayload("../../examples/invalid/lm2005_protocol_channel_payload.thread").expect("Failed to ingest lm2005_protocol_channel_payload.thread");
     let pairs = parseThread(&payload.threadContent, &payload.threadFileMapping).expect("Failed to parse thread file");
     let result = checkThread(&pairs, &payload.threadFileMapping);
     assert!(result.is_err(), "Expected LM2005 error for invalid protocol channel target");
@@ -148,7 +148,7 @@ Gives:
 #[test]
 fn testLM2006MissingDecorator() -> ()
 {
-    let payload = giveFilePayload("../examples/invalid/lm2006_missing_scenario_decorator.thread").expect("Failed to ingest lm2006_missing_scenario_decorator.thread");
+    let payload = giveFilePayload("../../examples/invalid/lm2006_missing_scenario_decorator.thread").expect("Failed to ingest lm2006_missing_scenario_decorator.thread");
     let pairs = parseThread(&payload.threadContent, &payload.threadFileMapping).expect("Failed to parse thread file");
     let result = checkThread(&pairs, &payload.threadFileMapping);
     assert!(result.is_ok(), "Expected success with warnings for missing decorator");
@@ -171,7 +171,7 @@ Gives:
 #[test]
 fn testLM2007UnusedSymbol() -> ()
 {
-    let payload = giveFilePayload("../examples/invalid/lm2007_unused_entity.thread").expect("Failed to ingest lm2007_unused_entity.thread");
+    let payload = giveFilePayload("../../examples/invalid/lm2007_unused_entity.thread").expect("Failed to ingest lm2007_unused_entity.thread");
     let pairs = parseThread(&payload.threadContent, &payload.threadFileMapping).expect("Failed to parse thread file");
     let result = checkThread(&pairs, &payload.threadFileMapping);
     assert!(result.is_ok(), "Expected success with warnings for unused entity");

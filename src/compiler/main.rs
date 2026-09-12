@@ -7,7 +7,7 @@ Purpose: Main entry point for the Loom compiler CLI binary supporting weave and 
 
 use clap::{Parser, Subcommand};
 use loom::helpers::diagnostics::{initLogLevel, LogLevel};
-use loom::services::compiler::{build, validate};
+use loom::services::pipeline::{build, validate};
 
 /*
 Command-line arguments parser for the Loom compiler.

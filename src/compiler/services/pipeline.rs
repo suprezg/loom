@@ -1,5 +1,5 @@
 /*
-File Name: compiler.rs
+File Name: pipeline.rs
 Purpose: Compiler service implementation providing high-level build and validate pipeline workflows supporting multiple input paths.
 */
 
