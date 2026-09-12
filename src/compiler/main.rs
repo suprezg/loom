@@ -7,7 +7,7 @@ Purpose: Main entry point for the Loom compiler CLI binary supporting weave and 
 
 use clap::{Parser, Subcommand};
 use loom::helpers::diagnostics::{initLogLevel, LogLevel};
-use loom::services::compiler::{build, validate};
+use loom::services::pipeline::{build, validate};
 
 /*
 Command-line arguments parser for the Loom compiler.
@@ -51,8 +51,8 @@ enum Commands
     #[command(about = "Weave specification files into unified JSON AST documentation")]
     Weave
     {
-        #[arg(help = "Path to the input specification file or directory")]
-        input: String,
+        #[arg(required = true, num_args = 1.., help = "Path(s) to the input specification files or directories")]
+        input: Vec<String>,
 
         #[arg(short = 'o', long = "output", help = "Path to the output directory")]
         output: String,
@@ -60,8 +60,8 @@ enum Commands
     #[command(about = "Scout and validate specification files for syntactic and semantic correctness")]
     Scout
     {
-        #[arg(help = "Path to the input specification file or directory")]
-        input: String,
+        #[arg(required = true, num_args = 1.., help = "Path(s) to the input specification files or directories")]
+        input: Vec<String>,
     },
 }
 

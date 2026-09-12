@@ -24,8 +24,8 @@ Gives:
 #[test]
 fn testDocumentComposer() -> ()
 {
-    let inputDir = "../examples/valid";
-    let outputDir = "../data";
+    let inputDir = "../../examples/valid";
+    let outputDir = "../../data";
     let threadJsonFileName = "thread_ast.json";
     let fabricJsonFileName = "fabric_ast.json";
 
