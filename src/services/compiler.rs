@@ -1,36 +1,48 @@
 /*
 File Name: compiler.rs
-Purpose: Compiler service implementation providing high-level build and validate pipeline workflows.
+Purpose: Compiler service implementation providing high-level build and validate pipeline workflows supporting multiple input paths.
 */
 
 #![allow(non_snake_case)]
 
 use crate::helpers::diagnostics::{logDiagnostic, logMessage, LoomMessage};
-use crate::helpers::file_handler::{giveFilePayload, writeFile};
+use crate::helpers::file_handler::{giveFilePayload, mergeFilePayloads, writeFile};
 use crate::helpers::document_composer::{composeThreadAst, composeFabricAst};
 use crate::analysis::syntactic::{parseThread, parseFabric};
 use crate::analysis::semantic::{checkThread, checkFabric};
 
 /*
-Validates Thread and Fabric specification files in an input directory or file for syntactic and semantic correctness.
+Validates Thread and Fabric specification files across one or more input directories or files for syntactic and semantic correctness.
 
 Takes:
-	inputDir (&str): Path to input file or directory containing specification files.
+	inputPaths (&[String]): List of paths to input files or directories containing specification files.
 
 Gives:
 	Result<(), String>: Ok(()) if validation succeeds without errors, or Err(String) on failure.
 */
-pub fn validate(inputDir: &str) -> Result<(), String>
+pub fn validate(inputPaths: &[String]) -> Result<(), String>
 {
     logMessage(&LoomMessage::new(
-        format!("Starting validation service for input '{}'", inputDir),
+        format!("Starting validation service for {} input path(s)", inputPaths.len()),
         miette::Severity::Advice,
     ));
 
-    let payload = giveFilePayload(inputDir)?;
+    if inputPaths.is_empty() {
+        let errMsg = String::from("Validation failed: No input paths provided");
+        logMessage(&LoomMessage::new(&errMsg, miette::Severity::Error));
+        return Err(errMsg);
+    }
+
+    let mut payloads = Vec::new();
+    for path in inputPaths {
+        let payload = giveFilePayload(path)?;
+        payloads.push(payload);
+    }
+
+    let payload = mergeFilePayloads(payloads)?;
 
     if payload.threadContent.is_empty() && payload.fabricContent.is_none() {
-        let errMsg = format!("No valid .thread or .fabric specifications found in '{}'", inputDir);
+        let errMsg = String::from("No valid .thread or .fabric specifications found across input paths");
         logMessage(&LoomMessage::new(&errMsg, miette::Severity::Error));
         return Err(errMsg);
     }
@@ -86,7 +98,7 @@ pub fn validate(inputDir: &str) -> Result<(), String>
     }
 
     logMessage(&LoomMessage::new(
-        format!("Validation service completed successfully for '{}'", inputDir),
+        format!("Validation service completed successfully for {} input path(s)", inputPaths.len()),
         miette::Severity::Advice,
     ));
 
@@ -94,26 +106,38 @@ pub fn validate(inputDir: &str) -> Result<(), String>
 }
 
 /*
-Builds and weaves Thread and Fabric specifications into JSON AST documentation files in the output directory.
+Builds and weaves Thread and Fabric specifications across one or more input directories or files into JSON AST documentation files in the output directory.
 
 Takes:
-	inputDir (&str): Path to input file or directory containing specification files.
+	inputPaths (&[String]): List of paths to input files or directories containing specification files.
 	outputDir (&str): Path to target output directory for generated JSON files.
 
 Gives:
 	Result<(), String>: Ok(()) if build and write succeeds without errors, or Err(String) on failure.
 */
-pub fn build(inputDir: &str, outputDir: &str) -> Result<(), String>
+pub fn build(inputPaths: &[String], outputDir: &str) -> Result<(), String>
 {
     logMessage(&LoomMessage::new(
-        format!("Starting build service for input '{}' to output '{}'", inputDir, outputDir),
+        format!("Starting build service for {} input path(s) to output '{}'", inputPaths.len(), outputDir),
         miette::Severity::Advice,
     ));
 
-    let payload = giveFilePayload(inputDir)?;
+    if inputPaths.is_empty() {
+        let errMsg = String::from("Build failed: No input paths provided");
+        logMessage(&LoomMessage::new(&errMsg, miette::Severity::Error));
+        return Err(errMsg);
+    }
+
+    let mut payloads = Vec::new();
+    for path in inputPaths {
+        let payload = giveFilePayload(path)?;
+        payloads.push(payload);
+    }
+
+    let payload = mergeFilePayloads(payloads)?;
 
     if payload.threadContent.is_empty() && payload.fabricContent.is_none() {
-        let errMsg = format!("No valid .thread or .fabric specifications found in '{}'", inputDir);
+        let errMsg = String::from("No valid .thread or .fabric specifications found across input paths");
         logMessage(&LoomMessage::new(&errMsg, miette::Severity::Error));
         return Err(errMsg);
     }

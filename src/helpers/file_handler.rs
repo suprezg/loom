@@ -373,6 +373,105 @@ pub fn giveFilePayload(path: &str) -> Result<IngestedPayload, String>
     Err(err)
 }
 
+/*
+Merges multiple IngestedPayload instances into a single unified IngestedPayload while properly shifting byte span offsets.
+
+Takes:
+	payloads (Vec<IngestedPayload>): List of ingested file payloads to merge.
+
+Gives:
+	Result<IngestedPayload, String>: Ok containing merged IngestedPayload struct or Error string.
+*/
+pub fn mergeFilePayloads(payloads: Vec<IngestedPayload>) -> Result<IngestedPayload, String>
+{
+    logMessage(&LoomMessage::new(
+        format!("Starting merge process for {} ingested payload(s)", payloads.len()),
+        miette::Severity::Advice,
+    ));
+
+    if payloads.is_empty() {
+        let err = String::from("Merge payloads failed: No payloads provided to merge");
+        logMessage(&LoomMessage::new(&err, miette::Severity::Error));
+        return Err(err);
+    }
+
+    let mut merged = IngestedPayload {
+        fabricFileMapping: Vec::new(),
+        fabricContent: None,
+        threadFileMapping: Vec::new(),
+        threadContent: String::new(),
+    };
+
+    for payload in payloads {
+        /* Merge Thread file mappings and thread content */
+        for mapping in payload.threadFileMapping {
+            if merged.threadFileMapping.iter().any(|m| m.filePath == mapping.filePath) {
+                let err = format!("Merge payloads failed: Duplicate thread specification file '{}' detected across input paths", mapping.filePath);
+                logMessage(&LoomMessage::new(&err, miette::Severity::Error));
+                return Err(err);
+            }
+
+            let startOffset = merged.threadContent.len();
+            merged.threadContent.push_str(&mapping.content);
+            merged.threadContent.push('\n');
+            let endOffset = merged.threadContent.len();
+
+            logMessage(&LoomMessage::new(
+                format!("Merged thread file span for '{}': byte range [{}..{}]", mapping.filePath, startOffset, endOffset),
+                miette::Severity::Advice,
+            ));
+
+            merged.threadFileMapping.push(FileSpanMapping {
+                filePath: mapping.filePath,
+                content: mapping.content,
+                startOffset,
+                endOffset,
+            });
+        }
+
+        /* Merge Fabric file mappings and fabric content */
+        for mapping in payload.fabricFileMapping {
+            if merged.fabricFileMapping.iter().any(|m| m.filePath == mapping.filePath) {
+                let err = format!("Merge payloads failed: Duplicate fabric blueprint file '{}' detected across input paths", mapping.filePath);
+                logMessage(&LoomMessage::new(&err, miette::Severity::Error));
+                return Err(err);
+            }
+
+            let mut currentFabric = merged.fabricContent.take().unwrap_or_default();
+            if !currentFabric.is_empty() && !currentFabric.ends_with('\n') {
+                currentFabric.push('\n');
+            }
+            let startOffset = currentFabric.len();
+            currentFabric.push_str(&mapping.content);
+            let endOffset = currentFabric.len();
+            merged.fabricContent = Some(currentFabric);
+
+            logMessage(&LoomMessage::new(
+                format!("Merged fabric blueprint span for '{}': byte range [{}..{}]", mapping.filePath, startOffset, endOffset),
+                miette::Severity::Advice,
+            ));
+
+            merged.fabricFileMapping.push(FileSpanMapping {
+                filePath: mapping.filePath,
+                content: mapping.content,
+                startOffset,
+                endOffset,
+            });
+        }
+    }
+
+    logMessage(&LoomMessage::new(
+        format!(
+            "Payload merge completed successfully: {} thread file(s), {} fabric file(s)",
+            merged.threadFileMapping.len(),
+            merged.fabricFileMapping.len()
+        ),
+        miette::Severity::Advice,
+    ));
+
+    Ok(merged)
+}
+
 #[cfg(test)]
 mod tests
 {
