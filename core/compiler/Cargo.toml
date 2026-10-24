@@ -1,0 +1,16 @@
+[package]
+name = "loom"
+version = "0.7.0"
+edition = "2021"
+
+[lib]
+name = "loom"
+path = "lib.rs"
+
+[[bin]]
+name = "loom"
+path = "main.rs"
+
+[dependencies]
+miette = { version = "7.6.0", features = ["fancy"] }
+thiserror = "2.0"
