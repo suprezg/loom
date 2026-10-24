@@ -1,7 +1,7 @@
 ---
 name: Feature Request
 about: Suggest a new idea or improvement for the project.
-title: "[FEATURE]: "
+title: "[FEATURE]: <Brief Title>"
 labels: ["feature"]
 ---
 
