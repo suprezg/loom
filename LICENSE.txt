@@ -1,21 +1,97 @@
-MIT License
+================================================================================
+                       THE LOOM PROJECT UMBRELLA LICENSE
+================================================================================
+Copyright (c) 2026 Ansh Chanda and Loom Project Contributors.
 
-Copyright (c) 2026 Ansh Chanda
+This repository is organized as a multi-licensed project. Different components of 
+the codebase are licensed under distinct open-source licenses chosen specifically 
+to maximize open ecosystem adoption, eliminate enterprise legal friction, and 
+safeguard the integrity of the core compiler toolchain.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+--------------------------------------------------------------------------------
+1. COMPONENT-BY-COMPONENT LICENSING BREAKDOWN
+--------------------------------------------------------------------------------
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+(a) core/standard/ (Loom Specification Standard - LSS)
+    License: MIT License
+    Scope:   The formal Loom Specification Standard, Markdown grammar definitions,
+             specification schemas, AST data formats, and specification templates.
+    Rights:  Maximum permissiveness. Anyone is free to use, copy, modify, merge, 
+             publish, distribute, sublicense, and/or implement the standard in any 
+             tool, proprietary system, or competing engine without royalties, 
+             licensing fees, or proprietary restrictions.
+    Note:    The full text of the MIT License is located at core/standard/LICENSE.txt.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+(b) core/compiler/ (Loom Compiler Engine & Core CLI Toolchain)
+    License: Mozilla Public License Version 2.0 (MPL 2.0)
+    Scope:   The Rust compiler engine ("loom" binary), parser implementations, 
+             semantic analyzers, graph generators, and CLI subcommands (scout, 
+             spin, weave, tapestry).
+    Rights:  File-level weak copyleft. Anyone is free to use, integrate, and 
+             distribute the compiler. Any modifications, bug fixes, or enhancements 
+             made directly to existing compiler source files must remain open and 
+             be made available under MPL 2.0.
+    Note:    The full text of the MPL 2.0 is located at core/compiler/LICENSE.txt.
+
+(c) core/skills/ (Loom AI Agent Skills & Automation Runbooks)
+    License: MIT License
+    Scope:   Antigravity agent skills, prompt runbooks, agentic workflows, and 
+             automated execution scripts.
+    Rights:  Maximum permissiveness. Anyone is free to adapt, bundle, commercialize, 
+             or integrate these skills into any agent platform or coding assistant.
+    Note:    The full text of the MIT License is located at core/skills/LICENSE.txt.
+
+(d) docs/, examples/, and tools/
+    License: MIT License
+    Scope:   Documentation guides, reference specifications, utility scripts, and 
+             example applications.
+    Rights:  Freely reusable and adaptable as templates for private or commercial use.
+
+(e) assets/ (Brand Assets, Logos, and Graphic Media)
+    Status:  All Rights Reserved
+    Scope:   The "Loom" name, wordmark, official logos, and graphic banners.
+    Terms:   Loom brand assets may not be used to endorse or promote products derived 
+             from this software without prior explicit written permission.
+
+--------------------------------------------------------------------------------
+2. COMMERCIAL USE, NON-CONTAMINATION & SAFELISTS
+--------------------------------------------------------------------------------
+
+The Loom Project is designed from the ground up to be safe and frictionless for 
+commercial, proprietary, and enterprise software engineering:
+
+(a) Non-Infection of User Specifications:
+    Writing, maintaining, or compiling specification files (.spec.md) using Loom 
+    does NOT subject your specifications, architecture, or proprietary ideas to any 
+    copyleft obligations. Your specifications belong entirely to you.
+
+(b) Non-Infection of Generated Code:
+    Source code, boilerplate, database migrations, tests, and artifacts generated 
+    by Loom or Loom Yarn plugins are the sole property of the user or organization 
+    running the tool. The Loom compiler asserts no copyright or intellectual 
+    property ownership over generated output.
+
+(c) Non-Infection of Custom Plugins (Yarns):
+    Yarns and plugins communicating with Loom via standard JSON AST, IPC, or CLI 
+    interfaces are considered independent works. Organizations and developers are 
+    free to author, distribute, and commercialize proprietary Yarns without 
+    disclosing source code or altering their own licensing terms.
+
+(d) Safe for Enterprise CI/CD Pipelines:
+    Because the compiler is licensed under MPL 2.0 rather than GNU GPL/AGPL, 
+    enterprise development teams can incorporate the Loom binary into internal 
+    continuous integration pipelines without risking copyleft contagion across 
+    proprietary company repositories.
+
+--------------------------------------------------------------------------------
+3. DISCLAIMER OF WARRANTY AND LIMITATION OF LIABILITY
+--------------------------------------------------------------------------------
+
+THE ENTIRE SOFTWARE, SPECIFICATIONS, AND DOCUMENTATION ARE PROVIDED "AS IS", 
+WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO 
+THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND 
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS, COPYRIGHT HOLDERS, OR CONTRIBUTORS 
+BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF 
+CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE 
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+================================================================================
